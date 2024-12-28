@@ -38,8 +38,14 @@ export class User extends AbstractEntity {
   @Column({ type: 'varchar', length: 50 })
   countryOfResidence: string;
 
-  @Column({ type: 'boolean', default: false })
-  emailVerified: boolean;
+  @Column({ nullable: true, type: 'timestamp' })
+  emailVerifiedAt: Date;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  phoneNumberVerifiedAt: Date;
+
+  @Column({ nullable: true, type: 'timestamp' })
+  bvnVerifiedAt: Date;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.INACTIVE })
   status: string;
