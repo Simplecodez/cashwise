@@ -1,6 +1,6 @@
-import { DataSource } from "typeorm";
-import TypeOrmConfig from "../configs/typeorm/typeorm.config";
-import { singleton } from "tsyringe";
+import { DataSource } from 'typeorm';
+import TypeOrmConfig from '../configs/typeorm/typeorm.config';
+import { singleton } from 'tsyringe';
 
 @singleton()
 export class DatabaseConnection {
