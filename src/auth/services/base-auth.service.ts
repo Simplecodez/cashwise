@@ -2,11 +2,13 @@ import { singleton } from 'tsyringe';
 import { RegisterService } from './register.service';
 import { IUser } from '../../user/interfaces/user.interface';
 import { EmailVerificationService } from './email-verification.service';
+import { AccountAccessService } from './access.service';
 
 @singleton()
 export class BaseAuthService {
   constructor(
     private readonly registerService: RegisterService,
+    private readonly accountAccessService: AccountAccessService,
     private readonly emailVerificationService: EmailVerificationService
   ) {}
 
@@ -28,5 +30,13 @@ export class BaseAuthService {
 
   async resendVerifyEmailOTP(email: string) {
     return this.emailVerificationService.resendVerifyEmailOTP(email);
+  }
+
+  async signin(signinPayload: { user: string; password: string }) {
+    return this.accountAccessService.signin(signinPayload);
+  }
+
+  async signout(userId: string) {
+    return this.accountAccessService.signout(userId);
   }
 }
