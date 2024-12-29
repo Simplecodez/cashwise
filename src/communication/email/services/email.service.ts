@@ -9,11 +9,16 @@ import { EmailType } from '../enum/email.enum';
 @singleton()
 export class EmailService {
   private readonly signUpTemplate: pug.compileTemplate;
+  private readonly resetPasswordTemplate: pug.compileTemplate;
   private readonly transporter: nodemailer.Transporter;
 
   constructor() {
     this.signUpTemplate = pug.compileFile(
       path.join(__dirname, `../email-templates/signup.pug`)
+    );
+
+    this.resetPasswordTemplate = pug.compileFile(
+      path.join(__dirname, `../email-templates/reset-password.pug`)
     );
 
     this.transporter = this.mailTransport();
@@ -51,12 +56,23 @@ export class EmailService {
     switch (data.emailType) {
       case EmailType.SIGNUP_OTP:
         return this.sendSignupOTP(data);
+      case EmailType.RESETPASSWORD:
+        return this.sendResetPasswordOTP(data);
       default:
         throw new Error(`Unsupported email type: ${data.emailType}`);
     }
   }
 
-  async sendSignupOTP(data: {
+  private async sendResetPasswordOTP(data: {
+    otp: string;
+    email: string;
+    emailType: EmailType;
+  }) {
+    const html = this.resetPasswordTemplate(data);
+    return this.initialEmailSending(data, 'Reset password OTP', html);
+  }
+
+  private async sendSignupOTP(data: {
     otp: string;
     email: string;
     emailType: EmailType;
