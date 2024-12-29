@@ -25,6 +25,9 @@ export class AuthRouter {
       this.protectMiddleware.protect(),
       this.authController.signout()
     );
+
+    this.router.post('/forgot-password', this.authController.forgotPassword());
+    this.router.post('/reset-password', this.authController.resetPassword());
   }
 
   getRouter() {
