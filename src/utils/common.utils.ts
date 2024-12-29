@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { CountryCode, parsePhoneNumber } from 'libphonenumber-js/max';
 import { AppError } from './app-error.utils';
 import { HttpStatus } from '../common/http-codes/codes';
+import bcrypt from 'bcrypt';
 
 export class CommonUtils {
   static generateOtp(options: {
@@ -56,8 +57,8 @@ export class CommonUtils {
     return phoneNumber;
   }
 
-  static signToken(id: string, expiresIn: string) {
-    return jwt.sign({ id }, process.env.JWT_SECRET as string, {
+  static signToken(payload: { id: string; tokenVersion: string }, expiresIn: string) {
+    return jwt.sign(payload, process.env.JWT_SECRET as string, {
       expiresIn
     });
   }
@@ -72,5 +73,12 @@ export class CommonUtils {
         }
       });
     });
+  }
+
+  static async verifyPassword(
+    candidatePassword: string,
+    userPassword: string
+  ): Promise<boolean> {
+    return await bcrypt.compare(candidatePassword, userPassword);
   }
 }

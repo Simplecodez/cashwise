@@ -1,14 +1,17 @@
 import { inject, singleton } from 'tsyringe';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, FindOneOptions, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { IUser } from '../interfaces/user.interface';
 import { LocalAuth } from '../entities/local-auth.entity';
 import { UserVerificationData } from '../../auth/interface/auth.interface';
+import { UserStatus } from '../enum/user.enum';
 
 @singleton()
 export class UserService {
   constructor(
     @inject('UserRepository') private readonly userRepository: Repository<User>,
+    @inject('LocalAuthRepository')
+    private readonly localAuthRepository: Repository<LocalAuth>,
     @inject('DataSource') private readonly dataSource: DataSource
   ) {}
 
@@ -38,8 +41,8 @@ export class UserService {
     return newUser;
   }
 
-  async findUserByField(field: string, value: string) {
-    return this.userRepository.findOne({ where: { [field]: value } });
+  async findUserByOptions(options: FindOneOptions<User>) {
+    return this.userRepository.findOne(options);
   }
 
   async updateUser(
@@ -48,5 +51,9 @@ export class UserService {
   ) {
     const { field, value } = conditionData;
     return this.userRepository.update({ [field]: value }, dataToUpdate);
+  }
+
+  async retrieveUserPassword(userId: string) {
+    return this.localAuthRepository.findOne({ where: { userId } });
   }
 }

@@ -5,9 +5,12 @@ import {
   registrationDataValidator,
   resendVerifyEmailOtpValidator,
   sendPhoneNumberOTPValidator,
+  signinValidator,
   verifyEmailValidator,
   verifyPhoneNumberValidator
 } from '../../user/validators/user.validator';
+import { Request } from 'express';
+import { IRequest } from '../../user/interfaces/user.interface';
 
 @singleton()
 export class AuthController {
@@ -70,6 +73,31 @@ export class AuthController {
       res.json({
         status: 'success',
         message
+      });
+    });
+  }
+
+  signin() {
+    return catchAsync(async (req, res) => {
+      await signinValidator.validateAsync(req.body);
+      const signinResult = await this.baseAuthService.signin(req.body);
+
+      res.json({
+        status: 'success',
+        data: signinResult
+      });
+    });
+  }
+
+  signout() {
+    return catchAsync(async (req: Request | IRequest, res) => {
+      const userId = (req as IRequest).user.id;
+
+      const signoutResult = await this.baseAuthService.signout(userId);
+
+      res.json({
+        status: 'success',
+        message: signoutResult
       });
     });
   }
