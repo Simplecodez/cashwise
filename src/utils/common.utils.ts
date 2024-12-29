@@ -63,9 +63,9 @@ export class CommonUtils {
     });
   }
 
-  static verifyJWTToken(token: string, secret: string): Promise<any> {
+  static verifyJWTToken(token: string): Promise<any> {
     return new Promise((resolve, reject) => {
-      jwt.verify(token, secret, (err, decoded) => {
+      jwt.verify(token, process.env.JWT_SECRET as string, (err, decoded) => {
         if (err) {
           reject(err);
         } else {
