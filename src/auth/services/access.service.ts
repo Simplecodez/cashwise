@@ -20,7 +20,7 @@ export class AccountAccessService {
 
     const options: FindOneOptions<User> = {
       where: [{ username: usernameOrEmail }, { email: usernameOrEmail }],
-      select: ['id', 'firstName', 'lastName', 'email', 'emailVerifiedAt']
+      select: ['id', 'firstName', 'lastName', 'email', 'emailVerifiedAt', 'tokenVersion']
     };
 
     const user = await this.userService.findUserByOptions(options);
@@ -49,7 +49,7 @@ export class AccountAccessService {
 
     const authToken = CommonUtils.signToken(payload, '1h');
 
-    const { emailVerifiedAt, ...remainingUserData } = user;
+    const { emailVerifiedAt, tokenVersion, ...remainingUserData } = user;
 
     return { user: remainingUserData, authToken };
   }
