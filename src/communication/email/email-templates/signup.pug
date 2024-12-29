@@ -1,0 +1,25 @@
+extends baseTemplate
+
+block content
+        p.message1 
+          | Your 
+          span CashWise 
+          | OTP:
+        .otp-box #{otp}
+        p.message2 
+          | Here is your OTP verification code. It will expire in 
+          span 20 
+          | minutes.
+        p.warning
+          img(
+            src="https://res.cloudinary.com/dpp8dy7yy/image/upload/v1724670491/mdi_warning_ignoxi.png", 
+            alt="Warning"
+          )
+          br
+          | If you didn't try to sign in just now, please change your password to protect your account. 
+          br
+          br
+          | If you have any questions, feel free to contact our 
+          a(href="mailto:support@cashwise.io") support team. 
+
+        
