@@ -10,9 +10,10 @@ import {
   UpdateDateColumn
 } from 'typeorm';
 import { User } from './user.entity';
+import { AbstractEntity } from '../../common/entities/abstract.entity';
 
 @Entity()
-export class LocalAuth {
+export class LocalAuth extends AbstractEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -24,12 +25,6 @@ export class LocalAuth {
 
   @Column()
   passwordHash: string;
-
-  @CreateDateColumn({ select: false })
-  createdAt: Date;
-
-  @UpdateDateColumn({ select: false })
-  updatedAt: Date;
 
   @BeforeInsert()
   @BeforeUpdate()
