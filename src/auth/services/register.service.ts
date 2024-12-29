@@ -4,13 +4,13 @@ import { IUser } from '../../user/interfaces/user.interface';
 import { CommunicationQueue } from '../../communication/job-processor/communication.queue';
 import { CommunicationMedium } from '../../communication/communications.enum';
 import { CommonUtils } from '../../utils/common.utils';
-import { EmailType } from '../../communication/email/enum/email.enum';
 import { RedisCache } from '../../configs/redis/redis.service';
 import { v4 as uuidv4 } from 'uuid';
 import { TwilioService } from '../../integrations/twilio/twilio.service';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
 import { UserVerificationData } from '../interface/auth.interface';
+import { SendEmailOtp } from './send-email-otp.service';
 
 @singleton()
 export class RegisterService {
@@ -22,6 +22,7 @@ export class RegisterService {
     private readonly userService: UserService,
     private readonly cacheService: RedisCache,
     private readonly smsService: TwilioService,
+    private readonly sendEmailOtp: SendEmailOtp,
     private readonly communicationQueue: CommunicationQueue
   ) {}
 
@@ -113,24 +114,7 @@ export class RegisterService {
 
     await this.cacheService.del(cacheKey);
 
-    const otp = CommonUtils.generateOtp({
-      size: 6,
-      digit: true,
-      upper: false,
-      lower: false
-    });
-
-    await this.cacheService.set(
-      `user:signup:${newUser.id}`,
-      otp,
-      this.emailVerificationCacheDuration
-    );
-
-    this.communicationQueue.addJob(CommunicationMedium.EMAIL, {
-      otp,
-      email: newUser.email,
-      emailType: EmailType.SIGNUP_OTP
-    });
+    await this.sendEmailOtp.sendEmailOtp(newUser);
 
     return 'Account created, please check your email for your email verification OTP';
   }
