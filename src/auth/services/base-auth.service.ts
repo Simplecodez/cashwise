@@ -3,13 +3,15 @@ import { RegisterService } from './register.service';
 import { IUser } from '../../user/interfaces/user.interface';
 import { EmailVerificationService } from './email-verification.service';
 import { AccountAccessService } from './access.service';
+import { PasswordRecoveryService } from './password-recovery.service';
 
 @singleton()
 export class BaseAuthService {
   constructor(
     private readonly registerService: RegisterService,
     private readonly accountAccessService: AccountAccessService,
-    private readonly emailVerificationService: EmailVerificationService
+    private readonly emailVerificationService: EmailVerificationService,
+    private readonly passwordRecoveryService: PasswordRecoveryService
   ) {}
 
   async sendPhoneNumberOTP(data: { phoneNumber: string; countryCode: string }) {
@@ -38,5 +40,13 @@ export class BaseAuthService {
 
   async signout(userId: string) {
     return this.accountAccessService.signout(userId);
+  }
+
+  async forgotPassword(email: string) {
+    return this.passwordRecoveryService.forgotPassword(email);
+  }
+
+  async resetPassword(data: { email: string; otp: string; password: string }) {
+    return this.passwordRecoveryService.resetPassword(data);
   }
 }
