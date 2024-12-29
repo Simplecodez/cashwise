@@ -8,13 +8,13 @@ import { EmailType } from '../../communication/email/enum/email.enum';
 
 @singleton()
 export class SendEmailOtp {
-  private emailVerificationCacheDuration = 1200;
+  private verificationCacheDuration = 1200;
   constructor(
     private readonly cacheService: RedisCache,
     private readonly communicationQueue: CommunicationQueue
   ) {}
 
-  async sendEmailOtp(user: User) {
+  async sendEmailOtp(user: User, cacheKey: string, emailType: EmailType) {
     const otp = CommonUtils.generateOtp({
       size: 6,
       digit: true,
@@ -22,16 +22,12 @@ export class SendEmailOtp {
       lower: false
     });
 
-    await this.cacheService.set(
-      `user:signup:${user.id}`,
-      otp,
-      this.emailVerificationCacheDuration
-    );
+    await this.cacheService.set(cacheKey, otp, this.verificationCacheDuration);
 
     this.communicationQueue.addJob(CommunicationMedium.EMAIL, {
       otp,
       email: user.email,
-      emailType: EmailType.SIGNUP_OTP
+      emailType
     });
   }
 }
