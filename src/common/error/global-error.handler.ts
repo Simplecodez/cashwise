@@ -11,12 +11,6 @@ export class GlobalErrorHandler {
 
   static handleDuplicateDB(err: any): AppError {
     let message: string = 'Email or phone number already exist';
-    if (
-      err.detail.includes('Key (display_name)') ||
-      err.detail.includes('Key (email)')
-    ) {
-      message = 'Invalid submission. Please check your input.';
-    }
     return new AppError(message, 400);
   }
 
