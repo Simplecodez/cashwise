@@ -9,3 +9,8 @@ export enum UserStatus {
   INACTIVE = 'inactive',
   SUSPENDED = 'suspended'
 }
+
+export enum Role {
+  USER = 'user',
+  ADMIN = 'admin'
+}
