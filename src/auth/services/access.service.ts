@@ -7,6 +7,7 @@ import { HttpStatus } from '../../common/http-codes/codes';
 import { CommonUtils } from '../../utils/common.utils';
 import { SendEmailOtp } from './send-email-otp.service';
 import { v4 as uuidv4 } from 'uuid';
+import { EmailType } from '../../communication/email/enum/email.enum';
 
 @singleton()
 export class AccountAccessService {
@@ -28,7 +29,9 @@ export class AccountAccessService {
     if (!user) throw new AppError('Invalid credentials', HttpStatus.UNAUTHORIZED);
 
     if (!user.emailVerifiedAt) {
-      await this.sendEmailOtp.sendEmailOtp(user);
+      const signupCacheKey = `user:signup:${user.id}`;
+      await this.sendEmailOtp.sendEmailOtp(user, signupCacheKey, EmailType.SIGNUP_OTP);
+
       throw new AppError(
         'Please checkout your email and verify your profile',
         HttpStatus.UNAUTHORIZED

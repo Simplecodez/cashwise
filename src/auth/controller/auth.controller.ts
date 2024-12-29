@@ -4,6 +4,7 @@ import { catchAsync } from '../../utils/catch-async.utils';
 import {
   registrationDataValidator,
   resendVerifyEmailOtpValidator,
+  resetPasswordValidator,
   sendPhoneNumberOTPValidator,
   signinValidator,
   verifyEmailValidator,
@@ -98,6 +99,30 @@ export class AuthController {
       res.json({
         status: 'success',
         message: signoutResult
+      });
+    });
+  }
+
+  forgotPassword() {
+    return catchAsync(async (req: Request, res) => {
+      await resendVerifyEmailOtpValidator.validateAsync(req.body);
+      const message = await this.baseAuthService.forgotPassword(req.body.email);
+
+      res.json({
+        status: 'success',
+        message
+      });
+    });
+  }
+
+  resetPassword() {
+    return catchAsync(async (req: Request, res) => {
+      await resetPasswordValidator.validateAsync(req.body);
+      const message = await this.baseAuthService.resetPassword(req.body);
+
+      res.json({
+        status: 'success',
+        message
       });
     });
   }

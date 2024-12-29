@@ -16,8 +16,7 @@ export class EmailVerificationService {
   constructor(
     private readonly cacheService: RedisCache,
     private readonly userService: UserService,
-    private readonly sendEmailOtp: SendEmailOtp,
-    private readonly communicationQueue: CommunicationQueue
+    private readonly sendEmailOtp: SendEmailOtp
   ) {}
 
   async verify(data: { otp: string; email: string }) {
@@ -63,7 +62,9 @@ export class EmailVerificationService {
     if (user.emailVerifiedAt)
       throw new AppError('Email already verified', HttpStatus.BAD_REQUEST);
 
-    await this.sendEmailOtp.sendEmailOtp(user);
+    const signupCacheKey = `user:signup:${user.id}`;
+
+    await this.sendEmailOtp.sendEmailOtp(user, signupCacheKey, EmailType.SIGNUP_OTP);
 
     return 'Your email verification OTP has been resent';
   }

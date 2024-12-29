@@ -11,6 +11,7 @@ import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
 import { UserVerificationData } from '../interface/auth.interface';
 import { SendEmailOtp } from './send-email-otp.service';
+import { EmailType } from '../../communication/email/enum/email.enum';
 
 @singleton()
 export class RegisterService {
@@ -113,7 +114,9 @@ export class RegisterService {
 
     await this.cacheService.del(cacheKey);
 
-    await this.sendEmailOtp.sendEmailOtp(newUser);
+    const signupCacheKey = `user:signup:${newUser.id}`;
+
+    await this.sendEmailOtp.sendEmailOtp(newUser, signupCacheKey, EmailType.SIGNUP_OTP);
 
     return 'Account created, please check your email for your email verification OTP';
   }

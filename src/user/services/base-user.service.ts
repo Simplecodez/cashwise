@@ -1,10 +1,10 @@
 import { inject, singleton } from 'tsyringe';
+import * as bcrypt from 'bcrypt';
 import { DataSource, FindOneOptions, Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { IUser } from '../interfaces/user.interface';
 import { LocalAuth } from '../entities/local-auth.entity';
 import { UserVerificationData } from '../../auth/interface/auth.interface';
-import { UserStatus } from '../enum/user.enum';
 
 @singleton()
 export class UserService {
@@ -55,5 +55,10 @@ export class UserService {
 
   async retrieveUserPassword(userId: string) {
     return this.localAuthRepository.findOne({ where: { userId } });
+  }
+
+  async updateUserPassword(userId: string, password: string) {
+    const passwordHash = await bcrypt.hash(password, 10);
+    return this.localAuthRepository.update({ userId }, { passwordHash });
   }
 }
