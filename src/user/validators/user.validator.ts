@@ -164,3 +164,9 @@ export const verifyEmailValidator = Joi.object({
 export const resendVerifyEmailOtpValidator = Joi.object({
   email: emailSchema
 });
+
+export const resetPasswordValidator = Joi.object({
+  email: emailSchema,
+  otp: otpSchema,
+  password: passwordSchema
+});
