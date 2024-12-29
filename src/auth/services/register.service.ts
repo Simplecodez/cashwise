@@ -16,7 +16,6 @@ import { SendEmailOtp } from './send-email-otp.service';
 export class RegisterService {
   private userVerificationDataExpiresIn = 3600000;
   private phoneNumberVerificationCacheDuration = 3600;
-  private emailVerificationCacheDuration = 1200;
 
   constructor(
     private readonly userService: UserService,

@@ -1,11 +1,15 @@
 import { Router } from 'express';
 import { AuthController } from '../controller/auth.controller';
 import { singleton } from 'tsyringe';
+import { ProtectMiddleware } from '../../common/middlewares/protect.middleware';
 
 @singleton()
 export class AuthRouter {
   private router = Router();
-  constructor(private authController: AuthController) {
+  constructor(
+    private readonly authController: AuthController,
+    private readonly protectMiddleware: ProtectMiddleware
+  ) {
     this.initialize();
   }
 
@@ -16,7 +20,11 @@ export class AuthRouter {
     this.router.post('/verify-email', this.authController.verifyEmail());
     this.router.post('/resend-email-otp', this.authController.resendVerifyEmailOTP());
     this.router.post('/signin', this.authController.signin());
-    this.router.post('/signout', this.authController.signout());
+    this.router.post(
+      '/signout',
+      this.protectMiddleware.protect(),
+      this.authController.signout()
+    );
   }
 
   getRouter() {
