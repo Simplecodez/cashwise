@@ -12,6 +12,20 @@ const nameSchema = Joi.string()
   .message("Please enter your first name. It can only contain [a-z, A-Z, ' and -].")
   .required();
 
+const usernameSchema = Joi.string()
+  .min(3)
+  .max(30)
+  .pattern(/^[a-zA-Z0-9_]+$/)
+  .required()
+  .messages({
+    'string.base': 'Username must be a string.',
+    'string.empty': 'Username cannot be empty.',
+    'string.min': 'Username must be at least 3 characters long.',
+    'string.max': 'Username cannot be longer than 30 characters.',
+    'string.pattern.base': 'Username can only contain letters, numbers, and underscores.',
+    'any.required': 'Username is required.'
+  });
+
 const emailSchema = Joi.string()
   .email({
     minDomainSegments: 2,
@@ -114,6 +128,7 @@ export const registrationDataValidator = Joi.object({
   userData: Joi.object({
     firstName: nameSchema,
     lastName: nameSchema,
+    username: usernameSchema,
     email: emailSchema,
     dateOfBirth: dateOfBirthSchema,
     gender: genderSchema,
@@ -129,6 +144,11 @@ export const registrationDataValidator = Joi.object({
 export const sendPhoneNumberOTPValidator = Joi.object({
   phoneNumber: phoneNumberSchema,
   countryCode: countryCodeSchema
+});
+
+export const signinValidator = Joi.object({
+  user: Joi.string().required(),
+  password: Joi.string().required()
 });
 
 export const verifyPhoneNumberValidator = Joi.object({
