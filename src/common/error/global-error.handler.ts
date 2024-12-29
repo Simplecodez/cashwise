@@ -14,6 +14,14 @@ export class GlobalErrorHandler {
     return new AppError(message, 400);
   }
 
+  static handleJWTError() {
+    return new AppError('Invalid token. Please log in again!', 401);
+  }
+
+  static handleJWTExpiredError() {
+    return new AppError('Your token has expired! Please log in again.', 401);
+  }
+
   static sendError(err: AppError, res: Response) {
     // console.error('error', err);
     if (err.isOperational) {
@@ -36,6 +44,8 @@ export class GlobalErrorHandler {
       if (error.name === 'ValidationError' && error.isJoi)
         error = this.handleValidationError(error);
       if (error.code === '23505') error = this.handleDuplicateDB(error);
+      if (error.name === 'JsonWebTokenError') error = this.handleJWTError();
+      if (error.name === 'TokenExpiredError') error = this.handleJWTExpiredError();
 
       this.sendError(error, res);
     };
