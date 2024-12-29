@@ -1,13 +1,11 @@
-import * as bcryptjs from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 import {
   BeforeInsert,
   BeforeUpdate,
   Column,
-  CreateDateColumn,
   Entity,
   OneToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn
+  PrimaryGeneratedColumn
 } from 'typeorm';
 import { User } from './user.entity';
 import { AbstractEntity } from '../../common/entities/abstract.entity';
@@ -29,6 +27,6 @@ export class LocalAuth extends AbstractEntity {
   @BeforeInsert()
   @BeforeUpdate()
   async hashpassword() {
-    this.passwordHash = await bcryptjs.hash(this.passwordHash, 10);
+    this.passwordHash = await bcrypt.hash(this.passwordHash, 10);
   }
 }
