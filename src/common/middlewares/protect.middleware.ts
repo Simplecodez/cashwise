@@ -46,7 +46,7 @@ export class ProtectMiddleware {
 
     const options: FindOneOptions<User> = {
       where: { id: decoded.id, tokenVersion: decoded.tokenVersion },
-      select: ['id', 'firstName', 'lastName', 'email', 'emailVerifiedAt']
+      select: ['id', 'firstName', 'lastName', 'email', 'username', 'emailVerifiedAt']
     };
 
     const user = await this.userService.findUserByOptions(options);
@@ -56,8 +56,8 @@ export class ProtectMiddleware {
         'You are not authorised for this action, please sign in.',
         HttpStatus.UNAUTHORIZED
       );
-
-    return user;
+    const { emailVerifiedAt, ...remainingUserData } = user;
+    return remainingUserData as User;
   }
 
   protect() {

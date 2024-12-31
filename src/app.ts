@@ -4,6 +4,7 @@ import { AuthRouter } from './auth/router/auth.router';
 import { GlobalErrorHandler } from './common/error/global-error.handler';
 import { BullBoardRouter } from './configs/bull/bull-board.router';
 import { HttpStatus } from './common/http-codes/codes';
+import { UserRouter } from './user/router/user.router';
 
 @singleton()
 export class App {
@@ -11,6 +12,7 @@ export class App {
 
   constructor(
     private readonly authRouter: AuthRouter,
+    private readonly userRouter: UserRouter,
     private readonly bullboardRouter: BullBoardRouter
   ) {
     this.app = express();
@@ -26,8 +28,9 @@ export class App {
 
   private initializeRoutes() {
     this.app.get('/', (req, res) => {
-      res.send('Welcom');
+      res.send('Welcome to Cashwise APIs');
     });
+    this.app.use('/api/v1/user', this.userRouter.getRouter());
     this.app.use('/api/v1/auth', this.authRouter.getRouter());
     this.app.use('/admin/queues', this.bullboardRouter.getRouter());
   }

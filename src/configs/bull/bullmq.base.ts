@@ -9,7 +9,11 @@ export abstract class BaseQueue {
       defaultJobOptions: {
         removeOnComplete: 500,
         removeOnFail: 500,
-        attempts: 3
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000
+        }
       }
     });
   }

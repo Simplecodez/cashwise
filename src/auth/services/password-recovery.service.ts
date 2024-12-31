@@ -28,7 +28,7 @@ export class PasswordRecoveryService {
 
     const user = await this.userService.findUserByOptions(options);
 
-    if (!user) return 'Please check your email for your OTP';
+    if (!user) return 'Please check your email for your password reset OTP';
 
     if (!user.emailVerifiedAt) {
       const signupCacheKey = `user:signup:${user.id}`;
@@ -44,7 +44,7 @@ export class PasswordRecoveryService {
 
     await this.sendEmailOTPService.sendEmailOtp(user, cacheKey, EmailType.RESETPASSWORD);
 
-    return 'Please check your email for your OTP';
+    return 'Please check your email for your password reset OTP';
   }
 
   async resetPassword(data: { email: string; otp: string; password: string }) {

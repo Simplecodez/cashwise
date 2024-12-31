@@ -45,11 +45,7 @@ const phoneNumberSchema = Joi.string()
   )
   .required();
 
-const countryCodeSchema = Joi.string()
-  .min(2)
-  .max(6)
-  .message('Please provide a valid phone number')
-  .required();
+const countryCodeSchema = Joi.valid('NG').required();
 
 const dateOfBirthSchema = Joi.date()
   .iso()
@@ -95,8 +91,6 @@ const passwordSchema = Joi.string()
       'Password must be at least 8 characters long, include uppercase and lowercase letters, a digit, and a special character.',
     'string.empty': 'Password is required.'
   });
-
-export { passwordSchema };
 
 const passwordConfirmSchema = Joi.any().valid(Joi.ref('password')).required().messages({
   'any.only': 'Passwords do not match. Please make sure the passwords match.'
