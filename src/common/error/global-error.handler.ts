@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../http-codes/codes';
+import { AxiosError } from 'axios';
 
 export class GlobalErrorHandler {
   static handleValidationError(error: any) {
@@ -15,11 +16,21 @@ export class GlobalErrorHandler {
   }
 
   static handleJWTError() {
-    return new AppError('Invalid token. Please log in again!', 401);
+    return new AppError('Invalid token. Please log in again!', HttpStatus.UNAUTHORIZED);
   }
 
   static handleJWTExpiredError() {
-    return new AppError('Your token has expired! Please log in again.', 401);
+    return new AppError(
+      'Your token has expired! Please log in again.',
+      HttpStatus.UNAUTHORIZED
+    );
+  }
+
+  static handleAxiosError(error: AxiosError) {
+    if (error.response?.status === 404) {
+      return new AppError('Invalid or expired token', HttpStatus.UNAUTHORIZED);
+    }
+    return error;
   }
 
   static sendError(err: AppError, res: Response) {
@@ -30,10 +41,10 @@ export class GlobalErrorHandler {
         message: err.message
       });
     }
-    // Log the error
+
     console.error('error', err);
-    // Send generic message.
-    return res.status(500).json({
+
+    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       status: 'error',
       message: 'Sorry, an error occurred. Please try again later.'
     });
@@ -46,6 +57,7 @@ export class GlobalErrorHandler {
       if (error.code === '23505') error = this.handleDuplicateDB(error);
       if (error.name === 'JsonWebTokenError') error = this.handleJWTError();
       if (error.name === 'TokenExpiredError') error = this.handleJWTExpiredError();
+      if (error.isAxiosError) error = this.handleAxiosError(error);
 
       this.sendError(error, res);
     };
