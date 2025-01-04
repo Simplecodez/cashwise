@@ -15,3 +15,7 @@ export enum KycDocumentType {
   NIN = 'nin',
   PROOF_OF_ADDRESS = 'proof_of_address'
 }
+
+export enum KycJobType {
+  BVN_VERIFICATION = 'bvn_verification'
+}

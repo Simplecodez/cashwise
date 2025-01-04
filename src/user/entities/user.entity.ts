@@ -29,7 +29,7 @@ export class User extends AbstractEntity {
   countryCode: string;
 
   @Column({ type: 'date' })
-  dateOfBirth: string;
+  dateOfBirth: Date;
 
   @Column({ type: 'enum', enum: Gender })
   gender: Gender;
