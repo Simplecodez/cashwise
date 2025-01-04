@@ -1,5 +1,5 @@
 import { singleton } from 'tsyringe';
-import { UserService } from '../../user/services/base-user.service';
+import { UserService } from '../../user/services/user/base-user.service';
 import { FindOneOptions } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { AppError } from '../../utils/app-error.utils';

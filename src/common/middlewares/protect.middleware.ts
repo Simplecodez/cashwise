@@ -1,5 +1,5 @@
 import { singleton } from 'tsyringe';
-import { UserService } from '../../user/services/base-user.service';
+import { UserService } from '../../user/services/user/base-user.service';
 import { IncomingHttpHeaders } from 'http';
 import { NextFunction, Request, Response } from 'express';
 import { catchAsync } from '../../utils/catch-async.utils';

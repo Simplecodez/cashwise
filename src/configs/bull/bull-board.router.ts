@@ -2,7 +2,7 @@ import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import { createBullBoard } from '@bull-board/api';
 import { Queue } from 'bullmq';
-import { injectable, singleton } from 'tsyringe';
+import { singleton } from 'tsyringe';
 import { CommunicationQueue } from '../../communication/job-processor/communication.queue';
 
 @singleton()

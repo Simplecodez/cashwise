@@ -3,6 +3,7 @@ import { singleton } from 'tsyringe';
 
 @singleton()
 export class TwilioService {
+  private readonly AxiosTimeout = 30000;
   constructor() {}
 
   private async initializeSend(data: URLSearchParams, apiURL: string) {
@@ -11,7 +12,7 @@ export class TwilioService {
         username: process.env.TWILIO_SID as string,
         password: process.env.TWILIO_AUTH_TOKEN as string
       },
-      timeout: 300000
+      timeout: this.AxiosTimeout
     });
   }
 

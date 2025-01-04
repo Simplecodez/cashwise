@@ -1,7 +1,7 @@
 import { singleton } from 'tsyringe';
 import { FindOneOptions } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
-import { UserService } from '../../user/services/base-user.service';
+import { UserService } from '../../user/services/user/base-user.service';
 import { RedisCache } from '../../configs/redis/redis.service';
 import { SendEmailOtp } from './send-email-otp.service';
 import { EmailType } from '../../communication/email/enum/email.enum';
