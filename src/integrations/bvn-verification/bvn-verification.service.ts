@@ -12,7 +12,7 @@ import { CommonUtils } from '../../utils/common.utils';
 @singleton()
 export class BvnService implements IBvnService {
   private static readonly mockBVNs: BvnRecord[] = JSON.parse(
-    readFileSync(`${__dirname}/../../mock-data/bvn-data.json`, { encoding: 'utf-8' })
+    readFileSync(`${__dirname}/../../mock-data/bvn-mock-data.json`, { encoding: 'utf-8' })
   );
 
   constructor(private readonly userService: UserService) {}
