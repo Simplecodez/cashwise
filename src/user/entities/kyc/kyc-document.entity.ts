@@ -7,13 +7,13 @@ import {
   Unique
 } from 'typeorm';
 import { Kyc } from './kyc.entity';
-import { KycDocumentType, KycStatus } from '../../enum/kyc.enum';
+import { KycDocumentType } from '../../enum/kyc.enum';
 
 @Entity()
 @Unique('unique_idx_kyc_id_document_type', ['kycId', 'documentType'])
 export class KycDocument {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @ManyToOne(() => Kyc, (kyc) => kyc.documents)
   kyc: Kyc;
@@ -25,7 +25,7 @@ export class KycDocument {
   documentType: KycDocumentType;
 
   @Column({ type: 'varchar', length: 255, select: false })
-  documentUrl: string;
+  documentUrlId: string;
 
   @CreateDateColumn()
   submittedAt: Date;

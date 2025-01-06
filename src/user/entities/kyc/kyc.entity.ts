@@ -3,16 +3,19 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
-  DeleteDateColumn
+  DeleteDateColumn,
+  Unique,
+  Index
 } from 'typeorm';
 import { KycDocument } from './kyc-document.entity';
 import { AbstractEntity } from '../../../common/entities/abstract.entity';
 import { KycLevel, KycStatus } from '../../enum/kyc.enum';
 
 @Entity()
+@Index('userid_uniq_Idx', ['userId'], { unique: true })
 export class Kyc extends AbstractEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ type: 'uuid' })
   userId: string;
@@ -20,14 +23,14 @@ export class Kyc extends AbstractEntity {
   @Column({ type: 'varchar', default: KycLevel.LEVEL_0 })
   kycLevel: KycLevel;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar', nullable: true, select: false })
   bvn: string;
 
   @Column({ type: 'varchar', length: 20, default: KycStatus.PENDING })
   status: KycStatus;
 
   @Column({ type: 'text', nullable: true })
-  rejectionReason: string;
+  rejectionReason: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
   levelOneVerifiedAt: Date;

@@ -17,5 +17,7 @@ export enum KycDocumentType {
 }
 
 export enum KycJobType {
-  BVN_VERIFICATION = 'bvn_verification'
+  BVN_VERIFICATION = 'bvn_verification',
+  NIN_VERIFICATION = 'nin_verification',
+  ADDRESS_VERIFICATION = 'address_verification'
 }
