@@ -46,7 +46,15 @@ export class ProtectMiddleware {
 
     const options: FindOneOptions<User> = {
       where: { id: decoded.id, tokenVersion: decoded.tokenVersion },
-      select: ['id', 'firstName', 'lastName', 'email', 'username', 'emailVerifiedAt']
+      select: [
+        'id',
+        'firstName',
+        'lastName',
+        'email',
+        'username',
+        'emailVerifiedAt',
+        'approvedKycLevel'
+      ]
     };
 
     const user = await this.userService.findUserByOptions(options);
