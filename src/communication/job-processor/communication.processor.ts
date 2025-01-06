@@ -2,6 +2,7 @@ import { Job } from 'bullmq';
 import { CommunicationService } from '../communications.service';
 import { CommunicationMedium } from '../communications.enum';
 import { singleton } from 'tsyringe';
+import { BullmqJobError } from '../../utils/job-error.utils';
 
 @singleton()
 export class CommunicationProcessor {
@@ -12,9 +13,8 @@ export class CommunicationProcessor {
       case CommunicationMedium.EMAIL: {
         try {
           await this.communicationService.sendEmail(job.data);
-        } catch (error) {
-          console.log(error);
-          throw error;
+        } catch (error: any) {
+          throw new BullmqJobError(error.message, 'Nodemailer');
         }
         break;
       }
@@ -22,9 +22,8 @@ export class CommunicationProcessor {
       case CommunicationMedium.SMS: {
         try {
           await this.communicationService.sendSMS(job.data.phoneNumber);
-        } catch (error) {
-          console.log(error);
-          throw error;
+        } catch (error: any) {
+          throw new BullmqJobError(error.message, 'Twilio');
         }
         break;
       }
