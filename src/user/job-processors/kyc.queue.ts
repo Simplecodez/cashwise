@@ -4,6 +4,7 @@ import { RedisCache } from '../../configs/redis/redis.service';
 import { Job, Worker } from 'bullmq';
 import { KycJobType } from '../enum/kyc.enum';
 import { KycProcessor } from './kyc.processor';
+import { IKycUpdate } from '../interfaces/kyc.interface';
 
 @singleton()
 export class KycQueue extends BaseQueue {
@@ -27,7 +28,11 @@ export class KycQueue extends BaseQueue {
     );
   }
 
-  async addJob(name: KycJobType, data: { bvn: string }): Promise<void> {
+  async addJob(name: KycJobType, data: IKycUpdate): Promise<void> {
     await this.queue.add(name, data);
+  }
+
+  getQueue() {
+    return this.queue;
   }
 }
