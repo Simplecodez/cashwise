@@ -14,11 +14,9 @@ export class UserRouter {
   }
 
   initialize() {
-    this.router.get(
-      '/profile',
-      this.protectMiddleware.protect(),
-      this.userController.getMe()
-    );
+    this.router.use(this.protectMiddleware.protect());
+    this.router.get('/profile', this.userController.getMe());
+    this.router.patch('/kyc', this.userController.updateKyc());
   }
 
   getRouter() {

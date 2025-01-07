@@ -9,7 +9,7 @@ const documentNumberSchema = Joi.string()
   .message('Document number must be 11 digits long.')
   .required();
 
-export const kycUpdateValidator = Joi.object({
+const kycUpdateValidator = Joi.object({
   level: kycLevelSchema,
   bvn: Joi.when('level', {
     is: 'level_1',

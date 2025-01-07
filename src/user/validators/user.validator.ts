@@ -77,11 +77,6 @@ const addressSchema = Joi.string()
     'string.pattern.base': 'Address contains invalid characters.'
   });
 
-// const bvnSchema = Joi.string()
-//   .pattern(/^\d{11}$/)
-//   .message('BVN must be exactly 11 digits long.')
-//   .required();
-
 const passwordSchema = Joi.string()
   .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
   .max(100)
