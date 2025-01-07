@@ -22,13 +22,13 @@ export class User extends AbstractEntity {
   @Column({ type: 'varchar', length: 255, unique: true })
   email: string;
 
-  @Column({ type: 'varchar', length: 15, select: false, unique: true })
+  @Column({ type: 'varchar', length: 15, unique: true })
   phoneNumber: string;
 
   @Column({ type: 'varchar', length: 7, select: false })
   countryCode: string;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'timestamp' })
   dateOfBirth: Date;
 
   @Column({ type: 'enum', enum: Gender })
