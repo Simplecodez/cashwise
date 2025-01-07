@@ -22,7 +22,7 @@ export class BvnService implements IBvnService {
       user.firstName.toLowerCase() === bvnRecord.firstName.toLowerCase() &&
       user.lastName.toLowerCase() === bvnRecord.lastName.toLowerCase() &&
       user.phoneNumber.replace(/^\+234/, '0') === bvnRecord.phoneNumber &&
-      CommonUtils.formatDate(user.dateOfBirth) === bvnRecord.phoneNumber
+      CommonUtils.formatDate(user.dateOfBirth) === bvnRecord.dob
     );
   }
 
@@ -37,7 +37,6 @@ export class BvnService implements IBvnService {
 
     const user = await this.userService.findUserByOptions(options);
     if (!user) return { isVerified: false, rejectionReason: 'Invalid BVN' };
-
     if (!this.isMatched(user, bvnRecord))
       return { isVerified: false, rejectionReason: 'Details mismatch' };
 
