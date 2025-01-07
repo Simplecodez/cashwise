@@ -3,6 +3,7 @@ import { Gender, Role, UserStatus } from '../enum/user.enum';
 import { AbstractEntity } from '../../common/entities/abstract.entity';
 import { LocalAuth } from './local-auth.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { KycLevel } from '../enum/kyc.enum';
 
 @Entity()
 export class User extends AbstractEntity {
@@ -21,14 +22,14 @@ export class User extends AbstractEntity {
   @Column({ type: 'varchar', length: 255, unique: true })
   email: string;
 
-  @Column({ type: 'varchar', length: 15, select: false, unique: true })
+  @Column({ type: 'varchar', length: 15, unique: true })
   phoneNumber: string;
 
   @Column({ type: 'varchar', length: 7, select: false })
   countryCode: string;
 
-  @Column({ type: 'date' })
-  dateOfBirth: string;
+  @Column({ type: 'timestamp' })
+  dateOfBirth: Date;
 
   @Column({ type: 'enum', enum: Gender })
   gender: Gender;
@@ -51,11 +52,11 @@ export class User extends AbstractEntity {
   @Column({ nullable: true, type: 'timestamp', select: false })
   phoneNumberVerifiedAt: Date;
 
-  @Column({ nullable: true, type: 'timestamp', select: false })
-  bvnVerifiedAt: Date;
-
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.INACTIVE, select: false })
   status: UserStatus;
+
+  @Column({ type: 'varchar', default: KycLevel.LEVEL_0 })
+  approvedKycLevel: KycLevel;
 
   @OneToOne(() => LocalAuth, (localAuth) => localAuth.user)
   local_auth: LocalAuth;

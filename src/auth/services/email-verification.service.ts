@@ -1,11 +1,8 @@
 import { singleton } from 'tsyringe';
 import { RedisCache } from '../../configs/redis/redis.service';
-import { UserService } from '../../user/services/base-user.service';
+import { UserService } from '../../user/services/user/base-user.service';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
-import { CommunicationQueue } from '../../communication/job-processor/communication.queue';
-import { CommonUtils } from '../../utils/common.utils';
-import { CommunicationMedium } from '../../communication/communications.enum';
 import { EmailType } from '../../communication/email/enum/email.enum';
 import { FindOneOptions } from 'typeorm';
 import { User } from '../../user/entities/user.entity';

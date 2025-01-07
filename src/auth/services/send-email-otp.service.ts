@@ -8,7 +8,7 @@ import { EmailType } from '../../communication/email/enum/email.enum';
 
 @singleton()
 export class SendEmailOtp {
-  private verificationCacheDuration = 1200;
+  private readonly verificationCacheDuration = 1200;
   constructor(
     private readonly cacheService: RedisCache,
     private readonly communicationQueue: CommunicationQueue

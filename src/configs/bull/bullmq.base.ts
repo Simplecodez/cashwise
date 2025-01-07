@@ -17,6 +17,4 @@ export abstract class BaseQueue {
       }
     });
   }
-
-  protected abstract jobHandler(jobData: any): Promise<void>;
 }

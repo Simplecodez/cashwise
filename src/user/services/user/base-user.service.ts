@@ -1,10 +1,11 @@
 import { inject, singleton } from 'tsyringe';
 import * as bcrypt from 'bcrypt';
 import { DataSource, FindOneOptions, Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
-import { IUser } from '../interfaces/user.interface';
-import { LocalAuth } from '../entities/local-auth.entity';
-import { UserVerificationData } from '../../auth/interface/auth.interface';
+import { User } from '../../entities/user.entity';
+import { IUser } from '../../interfaces/user.interface';
+import { LocalAuth } from '../../entities/local-auth.entity';
+import { UserVerificationData } from '../../../auth/interface/auth.interface';
+import { KycLevel } from '../../enum/kyc.enum';
 
 @singleton()
 export class UserService {
@@ -24,6 +25,7 @@ export class UserService {
         userToCreate.phoneNumber = userVerificationData.phoneNumber;
         userToCreate.countryCode = userVerificationData.countryCode;
         userToCreate.phoneNumberVerifiedAt = new Date(userVerificationData.createdAt);
+        userToCreate.approvedKycLevel = KycLevel.LEVEL_0;
 
         const insertResult = await transactionalEntityManager.insert(User, userToCreate);
 

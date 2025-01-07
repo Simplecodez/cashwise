@@ -1,0 +1,30 @@
+[
+  {
+    "bvn": "12345678901",
+    "firstName": "John",
+    "lastName": "Doe",
+    "dob": "1997-05-01",
+    "phoneNumber": "08072605647"
+  },
+  {
+    "bvn": "23456789012",
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "dob": "1985-05-12",
+    "phoneNumber": "08023456789"
+  },
+  {
+    "bvn": "34567890123",
+    "firstName": "Alice",
+    "lastName": "Johnson",
+    "dob": "1992-07-20",
+    "phoneNumber": "08034567890"
+  },
+  {
+    "bvn": "45678901234",
+    "firstName": "Bob",
+    "lastName": "Brown",
+    "dob": "1980-10-30",
+    "phoneNumber": "08045678901"
+  }
+]

@@ -1,5 +1,5 @@
 import { singleton } from 'tsyringe';
-import { UserService } from '../../user/services/base-user.service';
+import { UserService } from '../../user/services/user/base-user.service';
 import { IUser } from '../../user/interfaces/user.interface';
 import { CommunicationQueue } from '../../communication/job-processor/communication.queue';
 import { CommunicationMedium } from '../../communication/communications.enum';
@@ -15,8 +15,8 @@ import { EmailType } from '../../communication/email/enum/email.enum';
 
 @singleton()
 export class RegisterService {
-  private userVerificationDataExpiresIn = 3600000;
-  private phoneNumberVerificationCacheDuration = 3600;
+  private readonly userVerificationDataExpiresIn = 3600000;
+  private readonly phoneNumberVerificationCacheDuration = 3600;
 
   constructor(
     private readonly userService: UserService,

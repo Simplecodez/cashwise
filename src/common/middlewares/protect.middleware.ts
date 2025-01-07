@@ -1,5 +1,5 @@
 import { singleton } from 'tsyringe';
-import { UserService } from '../../user/services/base-user.service';
+import { UserService } from '../../user/services/user/base-user.service';
 import { IncomingHttpHeaders } from 'http';
 import { NextFunction, Request, Response } from 'express';
 import { catchAsync } from '../../utils/catch-async.utils';
@@ -46,7 +46,15 @@ export class ProtectMiddleware {
 
     const options: FindOneOptions<User> = {
       where: { id: decoded.id, tokenVersion: decoded.tokenVersion },
-      select: ['id', 'firstName', 'lastName', 'email', 'username', 'emailVerifiedAt']
+      select: [
+        'id',
+        'firstName',
+        'lastName',
+        'email',
+        'username',
+        'emailVerifiedAt',
+        'approvedKycLevel'
+      ]
     };
 
     const user = await this.userService.findUserByOptions(options);

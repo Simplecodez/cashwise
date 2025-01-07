@@ -81,4 +81,10 @@ export class CommonUtils {
   ): Promise<boolean> {
     return await bcrypt.compare(candidatePassword, userPassword);
   }
+
+  static formatDate(date: Date) {
+    if (isNaN(date.getTime())) return null;
+
+    return date.toISOString().split('T')[0];
+  }
 }
