@@ -16,9 +16,17 @@ class AppError extends Error implements IAppError {
   constructor(message: string, statusCode: number) {
     super(message);
     this.statusCode = statusCode;
-    this.status = statusCode === 500 ? 'Error' : 'fail';
+    this.status = this.getStatusLabel(statusCode);
     this.isOperational = true;
     Error.captureStackTrace(this, this.constructor);
+  }
+
+  private getStatusLabel(statusCode: number): string {
+    const labels: Record<number, string> = {
+      500: 'error',
+      202: 'pending'
+    };
+    return labels[statusCode] || 'fail';
   }
 }
 
