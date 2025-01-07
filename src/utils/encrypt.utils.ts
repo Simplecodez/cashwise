@@ -28,7 +28,7 @@ export class Encryption {
     });
   }
 
-  static decrypt(encryptedData: string) {
+  static decrypt(encryptedData: string): Promise<string> {
     const { encryptedText, iv: IV, salt } = this.splitData(encryptedData);
 
     return new Promise((resolve, reject) => {
