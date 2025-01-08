@@ -10,6 +10,7 @@ export interface IKycUpdate {
   bvn?: string;
   nin?: string;
   userId: string;
+  phoneNumber?: string;
   documentUrlId?: string;
   level?: KycLevel;
 }

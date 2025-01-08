@@ -10,7 +10,7 @@ export class AccountProcessor {
   async process(job: Job): Promise<void> {
     switch (job.name) {
       case AccountJobType.CREATION: {
-        await this.accountService.create(job.data);
+        await this.accountService.createAccount(job.data);
 
         break;
       }

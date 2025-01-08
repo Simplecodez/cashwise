@@ -25,7 +25,11 @@ export class UserController {
       const user = (req as IRequest).user;
       await validateKycUpdate(user.approvedKycLevel, req.body);
 
-      const message = await this.kycService.updateKyc({ ...req.body, userId: user.id });
+      const message = await this.kycService.updateKyc({
+        ...req.body,
+        userId: user.id,
+        phoneNumber: user.phoneNumber
+      });
 
       res.json({
         status: 'success',

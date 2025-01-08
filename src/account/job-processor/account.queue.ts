@@ -3,6 +3,8 @@ import { RedisCache } from '../../configs/redis/redis.service';
 import { Job, Worker } from 'bullmq';
 import { BaseQueue } from '../../configs/bull/bullmq.base';
 import { AccountProcessor } from './account.processor';
+import { AccountJobType } from '../enum/account.enum';
+import { Account } from '../entities/account.entity';
 
 @singleton()
 export class AccountQueue extends BaseQueue {
@@ -25,5 +27,13 @@ export class AccountQueue extends BaseQueue {
       },
       { connection: cacheService.getRedisInstance(), concurrency: 2 }
     );
+  }
+
+  async addJob(name: AccountJobType, data: Partial<Account>): Promise<void> {
+    await this.queue.add(name, data);
+  }
+
+  getQueue() {
+    return this.queue;
   }
 }
