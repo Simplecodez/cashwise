@@ -12,6 +12,9 @@ export class Account extends AbstractEntity {
   @Column({ type: 'uuid' })
   userId: string;
 
+  @Column({ type: 'varchar', length: 50 })
+  name: string;
+
   @ManyToOne(() => User, (user) => user.accounts)
   user: User;
 
