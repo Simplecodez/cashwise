@@ -9,3 +9,7 @@ export enum AccountStatus {
   SUSPENDED = 'suspended',
   LOCKED = 'locked'
 }
+
+export enum AccountJobType {
+  CREATION = 'creation'
+}
