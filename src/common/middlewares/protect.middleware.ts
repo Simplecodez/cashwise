@@ -53,6 +53,7 @@ export class ProtectMiddleware {
         'email',
         'username',
         'emailVerifiedAt',
+        'phoneNumber',
         'approvedKycLevel'
       ]
     };
