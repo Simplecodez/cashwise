@@ -57,7 +57,7 @@ export async function validateKycUpdate(approvedKycLevel: KycLevel, reqBody: any
 
   if (requestedLevelIndex !== currentLevelIndex + 1) {
     throw new AppError(
-      'You need to complete the next step before advancing further',
+      'Please complete the current and previous levels before progressing',
       HttpStatus.BAD_REQUEST
     );
   }

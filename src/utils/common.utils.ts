@@ -1,5 +1,6 @@
 import otpGenerator from 'otp-generator';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 import { CountryCode, parsePhoneNumber } from 'libphonenumber-js/max';
 import { AppError } from './app-error.utils';
 import { HttpStatus } from '../common/http-codes/codes';
@@ -86,5 +87,9 @@ export class CommonUtils {
     if (isNaN(date.getTime())) return null;
 
     return date.toISOString().split('T')[0];
+  }
+
+  static generateRandomAccountName() {
+    return `Account-${uuidv4().replace(/-/g, '').substring(0, 8)}`;
   }
 }

@@ -5,12 +5,21 @@ import { IKycUpdate } from '../interfaces/kyc.interface';
 import { IBvnService } from '../../integrations/interfaces/bvn-verification.services.interface';
 import { Encryption } from '../../utils/encrypt.utils';
 import { KycCrudService } from '../services/kyc/kyc-crud.service';
+import { AccountQueue } from '../../account/job-processor/account.queue';
+import {
+  AccountJobType,
+  AccountStatus,
+  AccountType
+} from '../../account/enum/account.enum';
+import { CommonUtils } from '../../utils/common.utils';
+import { Account } from '../../account/entities/account.entity';
 
 @singleton()
 export class KycProcessor {
   constructor(
     @inject('BvnService') private readonly bvnService: IBvnService,
-    private readonly kycCrudService: KycCrudService
+    private readonly kycCrudService: KycCrudService,
+    private readonly accountQueue: AccountQueue
   ) {}
   async process(job: Job<IKycUpdate>): Promise<void> {
     try {
@@ -18,11 +27,14 @@ export class KycProcessor {
         case KycJobType.BVN_VERIFICATION: {
           const { bvn: encrytedBvn, userId } = job.data;
           const bvn = await Encryption.decrypt(encrytedBvn as string);
+
           const verificationResult = await this.bvnService.verifyBvn(
             bvn as string,
             userId
           );
+
           const { isVerified, rejectionReason } = verificationResult;
+
           if (isVerified) {
             await this.kycCrudService.updateKycWithUser(userId, {
               bvn: encrytedBvn,
@@ -30,6 +42,15 @@ export class KycProcessor {
               status: KycStatus.APPROVED,
               levelOneVerifiedAt: new Date()
             });
+
+            const accountCreationData: Partial<Account> = {
+              userId,
+              name: CommonUtils.generateRandomAccountName(),
+              balance: 0,
+              type: AccountType.SAVINGS,
+              status: AccountStatus.ACTIVE
+            };
+            this.accountQueue.addJob(AccountJobType.CREATION, accountCreationData);
           } else {
             await this.kycCrudService.update(userId, {
               rejectionReason,

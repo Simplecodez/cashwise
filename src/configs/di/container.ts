@@ -5,6 +5,7 @@ import { DatabaseConnection } from '../../data-source/data-source';
 import { LocalAuth } from '../../user/entities/local-auth.entity';
 import { BvnService } from '../../integrations/bvn-verification/bvn-verification.service';
 import { Kyc } from '../../user/entities/kyc/kyc.entity';
+import { Account } from '../../account/entities/account.entity';
 
 const datasource = container.resolve(DatabaseConnection);
 
@@ -22,6 +23,10 @@ container.register<Repository<LocalAuth>>('LocalAuthRepository', {
 
 container.register<Repository<Kyc>>('KycRepository', {
   useFactory: () => datasource.getDataSource().getRepository(Kyc)
+});
+
+container.register<Repository<Account>>('AccountRepository', {
+  useFactory: () => datasource.getDataSource().getRepository(Account)
 });
 
 container.register('BvnService', BvnService, { lifecycle: Lifecycle.Singleton });

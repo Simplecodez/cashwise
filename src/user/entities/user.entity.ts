@@ -1,9 +1,10 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Gender, Role, UserStatus } from '../enum/user.enum';
 import { AbstractEntity } from '../../common/entities/abstract.entity';
 import { LocalAuth } from './local-auth.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { KycLevel } from '../enum/kyc.enum';
+import { Account } from '../../account/entities/account.entity';
 
 @Entity()
 export class User extends AbstractEntity {
@@ -54,6 +55,9 @@ export class User extends AbstractEntity {
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.INACTIVE, select: false })
   status: UserStatus;
+
+  @OneToMany(() => Account, (account) => account.user)
+  accounts: Account[];
 
   @Column({ type: 'varchar', default: KycLevel.LEVEL_0 })
   approvedKycLevel: KycLevel;
