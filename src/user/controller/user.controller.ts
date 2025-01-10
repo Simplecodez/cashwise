@@ -27,8 +27,7 @@ export class UserController {
 
       const message = await this.kycService.updateKyc({
         ...req.body,
-        userId: user.id,
-        phoneNumber: user.phoneNumber
+        userId: user.id
       });
 
       res.json({

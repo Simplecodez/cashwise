@@ -67,12 +67,12 @@ export class KycService {
     kycJobType: KycJobType;
     kycJobData: IKycUpdate;
   }> {
-    const { bvn, nin, userId, documentUrlId, phoneNumber, level } = data;
+    const { bvn, nin, userId, documentUrlId, level } = data;
     if (data.level === KycLevel.LEVEL_1) {
       const encryptedBvn = await Encryption.encrypt(bvn as string);
       return {
         kycJobType: KycJobType.BVN_VERIFICATION,
-        kycJobData: { bvn: encryptedBvn, phoneNumber, userId }
+        kycJobData: { bvn: encryptedBvn, userId }
       };
     } else if (data.level === KycLevel.LEVEL_2) {
       const encryptedNin = await Encryption.encrypt(nin as string);
