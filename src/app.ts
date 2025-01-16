@@ -7,7 +7,7 @@ import { HttpStatus } from './common/http-codes/codes';
 import { UserRouter } from './user/router/user.router';
 import { AccountRouter } from './account/router/account.router';
 import { TransactionRouter } from './account/router/transaction.router';
-import { PaystackWebhookRouter } from './integrations/payments/router/gateway-webhook.router';
+import { PaystackWebhookRouter } from './integrations/payments/router/paystack-webhook.router';
 
 @singleton()
 export class App {
