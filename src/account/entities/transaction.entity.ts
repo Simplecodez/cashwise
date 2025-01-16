@@ -1,47 +1,45 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import {
   ExternalBankUserDetail,
+  TransactionGateway,
   TransactionOrigin,
   TransactionStatus,
   TransactionType
 } from '../enum/transaction.enum';
-import { User } from '../../user/entities/user.entity';
 import { AbstractEntity } from '../../common/entities/abstract.entity';
+import { Account } from './account.entity';
 
 @Entity()
 export class Transaction extends AbstractEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
-  accountId: string;
+  @Column({ type: 'uuid', nullable: true })
+  senderAccountId: string;
+
+  @ManyToOne(() => Account, (account) => account.sentTransactions, { nullable: true })
+  senderAccount: Account;
 
   @Column({ type: 'uuid', nullable: true })
-  senderId: string;
+  receiverAccountId: string;
 
-  @ManyToOne(() => User, (user) => user.sentTransactions, { nullable: true })
-  sender: User;
+  @ManyToOne(() => Account, (user) => user.receivedTransactions, { nullable: true })
+  receiverAccount: Account;
 
-  @Column({ type: 'uuid', nullable: true })
-  recipientId: string;
-
-  @ManyToOne(() => User, (user) => user.receivedTransactions, { nullable: true })
-  recipient: User;
-
-  @Column({ type: 'jsonb', nullable: false })
+  @Column({ type: 'jsonb', nullable: true })
   externalSenderDetails: ExternalBankUserDetail;
 
-  @Column({ type: 'jsonb', nullable: false })
+  @Column({ type: 'jsonb', nullable: true })
   externalReceiverDetails: ExternalBankUserDetail;
 
-  @Column({ type: 'varchar', length: 40 })
+  @Column({ type: 'varchar', length: 40, nullable: true })
   sessionId: string;
 
   @Column({ type: 'varchar' })
   reference: string;
 
   @Column({ type: 'bigint' })
-  amount: bigint;
+  amount: number;
 
   @Column({ type: 'varchar', length: 50 })
   type: TransactionType;
@@ -52,6 +50,15 @@ export class Transaction extends AbstractEntity {
   @Column({ type: 'varchar' })
   origin: TransactionOrigin;
 
+  @Column({ type: 'varchar', nullable: true })
+  accessCode: string;
+
+  @Column({ type: 'varchar' })
+  gateway: TransactionGateway;
+
   @Column({ type: 'text', nullable: true })
   remark: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  failureReason: string;
 }

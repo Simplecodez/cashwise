@@ -12,12 +12,19 @@ export enum TransactionEntryType {
 export enum TransactionStatus {
   SUCCESS = 'success',
   FAILED = 'failed',
-  IN_PROGRESS = 'in_progress'
+  PENDING = 'pending',
+  REVERSED = 'reversed'
 }
 
 export enum TransactionOrigin {
   INTERNAL = 'internal',
   EXTERNAL = 'external'
+}
+
+export enum TransactionGateway {
+  PAYSTACK = 'paystack',
+  STRIPE = 'stripe',
+  NONE = ''
 }
 
 export type ExternalBankUserDetail = {

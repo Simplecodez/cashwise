@@ -1,7 +1,15 @@
-import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn
+} from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { AccountStatus, AccountType } from '../enum/account.enum';
 import { AbstractEntity } from '../../common/entities/abstract.entity';
+import { Transaction } from './transaction.entity';
 
 @Entity()
 @Index('account_number_uniq_Idx', ['accountNumber'], { unique: true })
@@ -29,4 +37,10 @@ export class Account extends AbstractEntity {
 
   @Column({ type: 'varchar', length: 50, default: AccountStatus.ACTIVE })
   status: AccountStatus;
+
+  @OneToMany(() => Transaction, (tx) => tx.senderAccount)
+  sentTransactions: Transaction[];
+
+  @OneToMany(() => Transaction, (tx) => tx.receiverAccount)
+  receivedTransactions: Transaction[];
 }
