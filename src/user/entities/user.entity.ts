@@ -5,7 +5,6 @@ import { LocalAuth } from './local-auth.entity';
 import { v4 as uuidv4 } from 'uuid';
 import { KycLevel } from '../enum/kyc.enum';
 import { Account } from '../../account/entities/account.entity';
-import { Transaction } from '../../account/entities/transaction.entity';
 
 @Entity()
 export class User extends AbstractEntity {
@@ -62,12 +61,6 @@ export class User extends AbstractEntity {
 
   @Column({ type: 'varchar', default: KycLevel.LEVEL_0 })
   approvedKycLevel: KycLevel;
-
-  @OneToMany(() => Transaction, (tx) => tx.sender)
-  sentTransactions: Transaction[];
-
-  @OneToMany(() => Transaction, (tx) => tx.sender)
-  receivedTransactions: Transaction[];
 
   @OneToOne(() => LocalAuth, (localAuth) => localAuth.user)
   local_auth: LocalAuth;
