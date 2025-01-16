@@ -30,7 +30,7 @@ export class GlobalErrorHandler {
     if (error.response?.status === 404) {
       return new AppError('Invalid or expired token', HttpStatus.UNAUTHORIZED);
     }
-    console.log(error.response?.data);
+
     if (error.response?.status === 400)
       return new AppError('Bad request', HttpStatus.BAD_REQUEST);
 
