@@ -8,19 +8,22 @@ import { HttpStatus } from '../../common/http-codes/codes';
 import { TransactionCrudService } from './transaction-crud.service';
 import {
   TransactionGateway,
+  TransactionJobType,
   TransactionOrigin,
   TransactionStatus,
   TransactionType
 } from '../enum/transaction.enum';
 import { AccountService } from './account.service';
 import { FindOneOptions } from 'typeorm';
+import { TransactionQueue } from '../job-processor/transaction.queue';
 
 @singleton()
 export class TransactionService {
   constructor(
     private readonly paymentService: PaymentService,
     private readonly transactionCrudService: TransactionCrudService,
-    private readonly accountService: AccountService
+    private readonly accountService: AccountService,
+    private readonly transactionQueue: TransactionQueue
   ) {}
 
   async initiateDeposit(
@@ -45,65 +48,29 @@ export class TransactionService {
     const amountInLowerunit = +amount * 100;
     const reference = this.generateReferenceId();
 
-    const paystackResponse = await this.paymentService.initializeTransaction(provider, {
+    const paymentResponse = await this.paymentService.initializeTransaction(provider, {
       email,
       amount: amountInLowerunit,
       reference
     });
 
-    if (!paystackResponse)
+    if (!paymentResponse)
       throw new AppError('Temporarily out of service', HttpStatus.BAD_GATEWAY);
 
     const newTransactionRecord = this.createNewTransactionRecord(
       receiverAccountId,
       reference,
       amountInLowerunit,
-      paystackResponse?.data.access_code,
+      paymentResponse?.data.access_code,
       'Deposit via Paystack'
     );
 
     await this.transactionCrudService.create(newTransactionRecord);
-    return paystackResponse.data;
+    return paymentResponse.data;
   }
 
-  async verifyTransaction(reference: string) {
-    const options: FindOneOptions<Transaction> = {
-      where: { reference, status: TransactionStatus.PENDING }
-    };
-    const transactionRecord = await this.transactionCrudService.findOne(options);
-    if (!transactionRecord)
-      throw new AppError('Transaction not found', HttpStatus.NOT_FOUND);
-
-    const transactionVerificationResult = await this.paymentService.verifyTransaction(
-      reference
-    );
-
-    if (+transactionRecord.amount !== transactionVerificationResult.data.data.amount) {
-      await this.transactionCrudService.updateOne(
-        reference,
-        transactionRecord.receiverAccountId,
-        +transactionRecord.amount,
-        TransactionStatus.FAILED,
-        'Amount Mismatch'
-      );
-      throw new AppError('Transaction amount mismatch', HttpStatus.UNPROCESSABLE_ENTITY);
-    }
-
-    const transactionStatus =
-      transactionVerificationResult.data.data.status === 'success'
-        ? TransactionStatus.SUCCESS
-        : TransactionStatus.FAILED;
-
-    await this.transactionCrudService.updateOne(
-      reference,
-      transactionRecord.receiverAccountId,
-      +transactionRecord.amount,
-      transactionStatus,
-      transactionStatus === TransactionStatus.FAILED
-        ? transactionVerificationResult.data.data.status
-        : undefined
-    );
-    return 'Verified';
+  addTransactionQueue(transactionJobType: TransactionJobType, data: any) {
+    return this.transactionQueue.addJob(transactionJobType, data);
   }
 
   private generateReferenceId() {

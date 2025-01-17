@@ -5,7 +5,7 @@ import { CountryCode, parsePhoneNumber } from 'libphonenumber-js/max';
 import { AppError } from './app-error.utils';
 import { HttpStatus } from '../common/http-codes/codes';
 import bcrypt from 'bcrypt';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 export class CommonUtils {
   static generateOtp(options: {
@@ -99,6 +99,10 @@ export class CommonUtils {
     hmac.update(JSON.stringify(payload), 'utf8');
     const computedSignature = hmac.digest('hex');
 
-    return computedSignature === signature;
+    return (
+      !!computedSignature &&
+      !!signature &&
+      timingSafeEqual(Buffer.from(computedSignature), Buffer.from(signature))
+    );
   }
 }
