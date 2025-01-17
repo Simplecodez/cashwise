@@ -10,7 +10,7 @@ export class PaystackWebhookRouter {
   }
 
   private initialize() {
-    this.router.post('/webhook', this.transactionController.verifyTransaction());
+    this.router.post('/webhook', this.transactionController.handleDepositTransaction());
   }
 
   getRouter() {

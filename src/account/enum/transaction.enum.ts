@@ -27,6 +27,17 @@ export enum TransactionGateway {
   NONE = ''
 }
 
+export enum TransactionJobType {
+  DEPOSIT_PAYSTACK = 'deposit.paystack',
+  DEPOSIT_STRIPE = 'deposit.stripe'
+}
+
+export type TransactionDepositData = {
+  reference: string;
+  status: string;
+  amount: number;
+};
+
 export type ExternalBankUserDetail = {
   name: string;
   bank: string;

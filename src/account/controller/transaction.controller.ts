@@ -5,6 +5,8 @@ import { IRequest } from '../../user/interfaces/user.interface';
 import { Request } from 'express';
 import { TransactionService } from '../services/transaction.service';
 import { CommonUtils } from '../../utils/common.utils';
+import { TransactionJobType } from '../enum/transaction.enum';
+import { PaystackWebhookType } from '../../integrations/payments/enum/payment.enum';
 
 @singleton()
 export class TransactionController {
@@ -30,15 +32,32 @@ export class TransactionController {
     });
   }
 
-  verifyTransaction() {
+  handleDepositTransaction() {
     return catchAsync(async (req: IRequest | Request, res) => {
-      // const result = await this.transactionService.verifyTransaction(req.body.reference);
-      console.log(req.body);
       const paystackSignature = req.headers['x-paystack-signature'] as string;
-      console.log(
-        'comparison result: ',
-        CommonUtils.verifyPaystackWebhookSignature(req.body, paystackSignature)
-      );
+      const body = req.body as PaystackWebhookType;
+      const { event, data } = body;
+      console.log(body, paystackSignature);
+
+      if (paystackSignature && body) {
+        if (
+          CommonUtils.verifyPaystackWebhookSignature(body, paystackSignature) &&
+          event === 'charge.success'
+        ) {
+          const { status, reference, amount } = data;
+
+          if (status && reference && amount)
+            this.transactionService.addTransactionQueue(
+              TransactionJobType.DEPOSIT_PAYSTACK,
+              {
+                status,
+                reference,
+                amount
+              }
+            );
+        }
+      }
+
       res.json({
         status: 'success'
       });

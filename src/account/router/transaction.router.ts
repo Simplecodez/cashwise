@@ -16,7 +16,6 @@ export class TransactionRouter {
   initialize() {
     this.router.use(this.protectMiddleware.protect());
     this.router.post('/initiate', this.transactionController.initiateDeposit());
-    this.router.get('/verify', this.transactionController.verifyTransaction());
   }
 
   getRouter() {

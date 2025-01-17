@@ -1,7 +1,6 @@
 import { singleton } from 'tsyringe';
 import { IPaymentProvider } from '../interfaces/payment.interface';
 import axios, { AxiosInstance } from 'axios';
-import { v4 as uuidv4 } from 'uuid';
 
 @singleton()
 export class Paystack implements IPaymentProvider {

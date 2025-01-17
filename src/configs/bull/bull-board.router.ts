@@ -6,6 +6,7 @@ import { singleton } from 'tsyringe';
 import { CommunicationQueue } from '../../communication/job-processor/communication.queue';
 import { KycQueue } from '../../user/job-processors/kyc.queue';
 import { AccountQueue } from '../../account/job-processor/account.queue';
+import { TransactionQueue } from '../../account/job-processor/transaction.queue';
 
 @singleton()
 export class BullBoardRouter {
@@ -16,13 +17,15 @@ export class BullBoardRouter {
   constructor(
     private readonly communicationQueue: CommunicationQueue,
     private readonly kycQueue: KycQueue,
-    private readonly accountQueue: AccountQueue
+    private readonly accountQueue: AccountQueue,
+    private readonly transactionQueue: TransactionQueue
   ) {
     this.serverAdapter = new ExpressAdapter();
     this.queues = [
       this.communicationQueue.getQueue(),
       this.kycQueue.getQueue(),
-      this.accountQueue.getQueue()
+      this.accountQueue.getQueue(),
+      this.transactionQueue.getQueue()
     ];
     this.queueList = this.queues.map((queue) => new BullAdapter(queue));
     createBullBoard({
