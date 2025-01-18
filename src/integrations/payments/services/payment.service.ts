@@ -3,13 +3,13 @@ import { IPaymentProvider } from '../interfaces/payment.interface';
 import { PaymentProvider } from '../enum/payment.enum';
 import { AppError } from '../../../utils/app-error.utils';
 import { HttpStatus } from '../../../common/http-codes/codes';
-import { TransactionCrudService } from '../../../account/services/transaction-crud.service';
 import { Transaction } from '../../../account/entities/transaction.entity';
 import { FindOneOptions } from 'typeorm';
 import {
   TransactionDepositData,
   TransactionStatus
 } from '../../../account/enum/transaction.enum';
+import { TransactionCrudService } from '../../../account/services/transaction/transaction-crud.service';
 
 @singleton()
 export class PaymentService {
@@ -51,7 +51,7 @@ export class PaymentService {
       }
 
       if (+transactionRecord.amount !== amount) {
-        await this.transactionCrudService.updateOne(
+        await this.transactionCrudService.handleDeposit(
           reference,
           transactionRecord.receiverAccountId,
           +transactionRecord.amount,
@@ -65,7 +65,7 @@ export class PaymentService {
       const transactionStatus =
         status === 'success' ? TransactionStatus.SUCCESS : TransactionStatus.FAILED;
 
-      await this.transactionCrudService.updateOne(
+      await this.transactionCrudService.handleDeposit(
         reference,
         transactionRecord.receiverAccountId,
         +transactionRecord.amount,

@@ -61,4 +61,8 @@ export class Transaction extends AbstractEntity {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   failureReason: string;
+
+  get amountInBaseUnit(): number {
+    return this.amount / 100;
+  }
 }
