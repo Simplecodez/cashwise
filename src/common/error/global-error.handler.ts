@@ -15,6 +15,13 @@ export class GlobalErrorHandler {
     return new AppError(message, 400);
   }
 
+  static handleBadJsonFormatError(): AppError {
+    return new AppError(
+      'Invalid JSON format, please check your request body.',
+      HttpStatus.BAD_REQUEST
+    );
+  }
+
   static handleJWTError() {
     return new AppError('Invalid token. Please log in again!', HttpStatus.UNAUTHORIZED);
   }
@@ -61,6 +68,8 @@ export class GlobalErrorHandler {
       if (error.name === 'JsonWebTokenError') error = this.handleJWTError();
       if (error.name === 'TokenExpiredError') error = this.handleJWTExpiredError();
       if (error.isAxiosError) error = this.handleAxiosError(error);
+      if (error instanceof SyntaxError && 'body' in error)
+        error = this.handleBadJsonFormatError();
 
       this.sendError(error, res);
     };
