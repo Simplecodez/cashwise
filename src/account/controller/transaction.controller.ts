@@ -1,16 +1,48 @@
 import { singleton } from 'tsyringe';
 import { catchAsync } from '../../utils/catch-async.utils';
-import { initializeTransactionValidator } from '../validator/transaction.validator';
+import {
+  initializeTransactionValidator,
+  internalTransferValidator
+} from '../validator/transaction.validator';
 import { IRequest } from '../../user/interfaces/user.interface';
 import { Request } from 'express';
-import { TransactionService } from '../services/transaction.service';
 import { CommonUtils } from '../../utils/common.utils';
-import { TransactionJobType } from '../enum/transaction.enum';
+import { InternalTransferData, TransactionJobType } from '../enum/transaction.enum';
 import { PaystackWebhookType } from '../../integrations/payments/enum/payment.enum';
+import { TransactionService } from '../services/transaction/transaction.service';
 
 @singleton()
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
+
+  transferToInternalAccount() {
+    return catchAsync(async (req: IRequest | Request, res) => {
+      await internalTransferValidator.validateAsync(req.body, { convert: false });
+      const { approvedKycLevel, id: userId } = (req as IRequest).user;
+
+      const { receiverAccountNumber, senderAccountId, amount } =
+        req.body as InternalTransferData;
+
+      const { receiverAccountId, amountInLowerUnit } =
+        await this.transactionService.validateInternalTransferDetail(
+          senderAccountId,
+          receiverAccountNumber,
+          userId,
+          amount,
+          approvedKycLevel
+        );
+
+      this.transactionService.initializeInternalTransfer(
+        TransactionJobType.INTERNAL_TRANSFER,
+        { ...req.body, userId, amount: amountInLowerUnit, receiverAccountId }
+      );
+
+      res.json({
+        status: 'success',
+        message: `${amount} is on it's way to ${receiverAccountNumber}`
+      });
+    });
+  }
 
   initiateDeposit() {
     return catchAsync(async (req: IRequest | Request, res) => {

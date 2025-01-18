@@ -24,12 +24,13 @@ export enum TransactionOrigin {
 export enum TransactionGateway {
   PAYSTACK = 'paystack',
   STRIPE = 'stripe',
-  NONE = ''
+  NONE = 'none'
 }
 
 export enum TransactionJobType {
   DEPOSIT_PAYSTACK = 'deposit.paystack',
-  DEPOSIT_STRIPE = 'deposit.stripe'
+  DEPOSIT_STRIPE = 'deposit.stripe',
+  INTERNAL_TRANSFER = 'internal.transfer'
 }
 
 export type TransactionDepositData = {
@@ -41,4 +42,10 @@ export type TransactionDepositData = {
 export type ExternalBankUserDetail = {
   name: string;
   bank: string;
+};
+
+export type InternalTransferData = {
+  senderAccountId: string;
+  amount: number;
+  receiverAccountNumber: string;
 };

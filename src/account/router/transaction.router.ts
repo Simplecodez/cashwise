@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { singleton } from 'tsyringe';
 import { ProtectMiddleware } from '../../common/middlewares/protect.middleware';
 import { TransactionController } from '../controller/transaction.controller';
+import { checkKycLevel } from '../../common/middlewares/kyc-validation.middleware';
 
 @singleton()
 export class TransactionRouter {
@@ -15,7 +16,12 @@ export class TransactionRouter {
 
   initialize() {
     this.router.use(this.protectMiddleware.protect());
-    this.router.post('/initiate', this.transactionController.initiateDeposit());
+    this.router.use(checkKycLevel());
+    this.router.post('/initiate-deposit', this.transactionController.initiateDeposit());
+    this.router.post(
+      '/initiate-internal-transfer',
+      this.transactionController.transferToInternalAccount()
+    );
   }
 
   getRouter() {
