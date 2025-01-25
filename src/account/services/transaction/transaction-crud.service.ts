@@ -26,6 +26,54 @@ export class TransactionCrudService {
     return this.transactionRepository.findOne(options);
   }
 
+  async calculateDailyTotalSuccessTransfer(senderAccountId: string) {
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setUTCHours(23, 59, 59, 999);
+    console.log(startOfDay, endOfDay);
+
+    const result = await this.transactionRepository
+      .createQueryBuilder('transaction')
+      .select('SUM(transaction.amount)', 'total')
+      .where('transaction.senderAccountId = :senderAccountId', { senderAccountId })
+      .andWhere('transaction.status = :status', { status: TransactionStatus.SUCCESS })
+      .andWhere('transaction.createdAt BETWEEN :startOfDay AND :endOfDay', {
+        startOfDay,
+        endOfDay
+      })
+      .getRawOne();
+
+    console.log(result.total);
+    return parseFloat(result?.total || 0);
+  }
+
+  async updateExternalTransferTransactionStatus(
+    senderAccountId: string,
+    transactionStatus: TransactionStatus,
+    amount: number,
+    reference: string,
+    session: {}
+  ) {
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      if (transactionStatus !== TransactionStatus.SUCCESS) {
+        await transactionalEntityManager.increment(
+          Account,
+          { id: senderAccountId },
+          'balance',
+          amount
+        );
+      }
+
+      await transactionalEntityManager.update(
+        Transaction,
+        { reference },
+        { session, status: transactionStatus }
+      );
+    });
+  }
+
   async handleDeposit(
     reference: string,
     accountId: string,
@@ -83,6 +131,28 @@ export class TransactionCrudService {
           amount,
           remark
         )
+      );
+
+      await transactionalEntityManager.insert(Transaction, newTransactionRecord);
+    });
+  }
+
+  async handleExternalTransferDebit(
+    senderAccountId: string,
+    amount: number,
+    transactionRecord: Partial<Transaction>
+  ) {
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      await transactionalEntityManager.decrement(
+        Account,
+        { id: senderAccountId },
+        'balance',
+        amount
+      );
+
+      const newTransactionRecord = transactionalEntityManager.create(
+        Transaction,
+        transactionRecord
       );
 
       await transactionalEntityManager.insert(Transaction, newTransactionRecord);
