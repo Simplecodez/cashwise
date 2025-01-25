@@ -6,9 +6,10 @@ import { LocalAuth } from '../../user/entities/local-auth.entity';
 import { BvnService } from '../../integrations/bvn-verification/bvn-verification.service';
 import { Kyc } from '../../user/entities/kyc/kyc.entity';
 import { Account } from '../../account/entities/account.entity';
-import { IPaymentProvider } from '../../integrations/payments/interfaces/payment.interface';
+import { IPaystackPaymentProvider } from '../../integrations/payments/interfaces/paystack-payment.interface';
 import { Paystack } from '../../integrations/payments/services/paystack.service';
 import { Transaction } from '../../account/entities/transaction.entity';
+import { ExternalRecipient } from '../../account/entities/external-account.entity';
 
 const datasource = container.resolve(DatabaseConnection);
 
@@ -36,8 +37,12 @@ container.register<Repository<Transaction>>('TransactionRepository', {
   useFactory: () => datasource.getDataSource().getRepository(Transaction)
 });
 
+container.register<Repository<ExternalRecipient>>('ExternalRecipient', {
+  useFactory: () => datasource.getDataSource().getRepository(ExternalRecipient)
+});
+
 container.register('BvnService', BvnService, { lifecycle: Lifecycle.Singleton });
 
-container.register<IPaymentProvider>('Paystack', Paystack, {
+container.register<IPaystackPaymentProvider>('Paystack', Paystack, {
   lifecycle: Lifecycle.Singleton
 });
