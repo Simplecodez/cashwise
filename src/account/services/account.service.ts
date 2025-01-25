@@ -2,11 +2,14 @@ import { inject, singleton } from 'tsyringe';
 import { FindOneOptions, Repository } from 'typeorm';
 import { Account } from '../entities/account.entity';
 import { createHash, randomBytes } from 'crypto';
+import { ExternalRecipient } from '../entities/external-account.entity';
 
 @singleton()
 export class AccountService {
   constructor(
-    @inject('AccountRepository') private readonly accountRepository: Repository<Account>
+    @inject('AccountRepository') private readonly accountRepository: Repository<Account>,
+    @inject('ExternalRecipient')
+    private readonly externalAccountRecipientRepository: Repository<ExternalRecipient>
   ) {}
 
   async createAccount(data: Partial<Account>) {
@@ -15,8 +18,17 @@ export class AccountService {
     return this.accountRepository.insert(newAccount);
   }
 
+  async createExternalRecipient(data: Partial<ExternalRecipient>) {
+    const newExternalRecipient = this.externalAccountRecipientRepository.create(data);
+    return this.externalAccountRecipientRepository.insert(newExternalRecipient);
+  }
+
   async findOne(options: FindOneOptions<Account>) {
     return this.accountRepository.findOne(options);
+  }
+
+  async findOneExternalAccount(options: FindOneOptions<ExternalRecipient>) {
+    return this.externalAccountRecipientRepository.findOne(options);
   }
 
   async confirmAccount(accountNumber: string) {
@@ -30,7 +42,12 @@ export class AccountService {
   }
 
   async findAll(userId: string) {
-    return this.accountRepository.find({ where: { userId } });
+    const accounts = await this.accountRepository.find({ where: { userId } });
+    const accountWithAmountInHigherCurrency = accounts.map((account) => ({
+      ...account,
+      balance: (account.balance / 100).toFixed(2)
+    }));
+    return accountWithAmountInHigherCurrency;
   }
 
   private async generateAccountNumber(): Promise<string> {

@@ -5,6 +5,7 @@ import { CountryCode, parsePhoneNumber } from 'libphonenumber-js/max';
 import { AppError } from './app-error.utils';
 import { HttpStatus } from '../common/http-codes/codes';
 import bcrypt from 'bcrypt';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 export class CommonUtils {
   static generateOtp(options: {
@@ -91,5 +92,17 @@ export class CommonUtils {
 
   static generateRandomAccountName() {
     return `Account-${uuidv4().replace(/-/g, '').substring(0, 8)}`;
+  }
+
+  static verifyPaystackWebhookSignature(payload: any, signature: string) {
+    const hmac = createHmac('sha512', process.env.PAYSTACK_SECRET_KEY as string);
+    hmac.update(JSON.stringify(payload), 'utf8');
+    const computedSignature = hmac.digest('hex');
+
+    return (
+      !!computedSignature &&
+      !!signature &&
+      timingSafeEqual(Buffer.from(computedSignature), Buffer.from(signature))
+    );
   }
 }

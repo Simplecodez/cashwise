@@ -35,6 +35,8 @@ export const confirmAccountValidator = Joi.object({
   accountNumber: Joi.string().length(10)
 });
 
+const permittedKycLevel = ['level_1', 'level_2', 'level_3'];
+
 export async function accountCreateValidation(
   reqBody: {
     accountType: string;
@@ -43,7 +45,7 @@ export async function accountCreateValidation(
   userKycLevel: KycLevel
 ) {
   await accountCreationValidator.validateAsync(reqBody);
-  if (userKycLevel === KycLevel.LEVEL_0)
+  if (!permittedKycLevel.includes(userKycLevel))
     throw new AppError(
       'Please complete your KYC before trying to create an account',
       HttpStatus.FORBIDDEN

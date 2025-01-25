@@ -6,6 +6,8 @@ import { BullBoardRouter } from './configs/bull/bull-board.router';
 import { HttpStatus } from './common/http-codes/codes';
 import { UserRouter } from './user/router/user.router';
 import { AccountRouter } from './account/router/account.router';
+import { TransactionRouter } from './account/router/transaction.router';
+import { PaystackWebhookRouter } from './integrations/payments/router/paystack-webhook.router';
 
 @singleton()
 export class App {
@@ -15,6 +17,8 @@ export class App {
     private readonly authRouter: AuthRouter,
     private readonly userRouter: UserRouter,
     private readonly accountRouter: AccountRouter,
+    private readonly transactionRouter: TransactionRouter,
+    private readonly paystackWebhookRouter: PaystackWebhookRouter,
     private readonly bullboardRouter: BullBoardRouter
   ) {
     this.app = express();
@@ -35,11 +39,13 @@ export class App {
     this.app.use('/api/v1/users', this.userRouter.getRouter());
     this.app.use('/api/v1/auth', this.authRouter.getRouter());
     this.app.use('/api/v1/accounts', this.accountRouter.getRouter());
+    this.app.use('/paystack', this.paystackWebhookRouter.getRouter());
+    this.app.use('/api/v1/transactions', this.transactionRouter.getRouter());
     this.app.use('/admin/queues', this.bullboardRouter.getRouter());
   }
 
   private initializeGlobalRouteHandling() {
-    this.app.use('*', (req, res, next) => {
+    this.app.use('*', (req, res) => {
       res.status(HttpStatus.NOT_FOUND).json({
         status: 'fail',
         message: `Cannot find ${req.originalUrl} on this server`
@@ -50,6 +56,7 @@ export class App {
   private initializeErrorHandling() {
     this.app.use(GlobalErrorHandler.errorHandler());
   }
+
   public start(port: number) {
     this.app.listen(port, () => {
       console.log(`Application running on port ${port}`);
