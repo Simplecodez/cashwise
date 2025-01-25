@@ -1,10 +1,11 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import {
   ExternalBankUserDetail,
   TransactionGateway,
   TransactionOrigin,
   TransactionStatus,
-  TransactionType
+  TransactionType,
+  TransferSessionData
 } from '../enum/transaction.enum';
 import { AbstractEntity } from '../../common/entities/abstract.entity';
 import { Account } from './account.entity';
@@ -14,12 +15,14 @@ export class Transaction extends AbstractEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index('IDX_sender_account_id')
   @Column({ type: 'uuid', nullable: true })
   senderAccountId: string;
 
   @ManyToOne(() => Account, (account) => account.sentTransactions, { nullable: true })
   senderAccount: Account;
 
+  @Index('IDX_receiver_account_id')
   @Column({ type: 'uuid', nullable: true })
   receiverAccountId: string;
 
@@ -32,8 +35,8 @@ export class Transaction extends AbstractEntity {
   @Column({ type: 'jsonb', nullable: true })
   externalReceiverDetails: ExternalBankUserDetail;
 
-  @Column({ type: 'varchar', length: 40, nullable: true })
-  sessionId: string;
+  @Column({ type: 'jsonb', nullable: true })
+  session: TransferSessionData;
 
   @Column({ type: 'varchar' })
   reference: string;
@@ -44,6 +47,7 @@ export class Transaction extends AbstractEntity {
   @Column({ type: 'varchar', length: 50 })
   type: TransactionType;
 
+  @Index('IDX_transaction_status')
   @Column({ type: 'varchar' })
   status: TransactionStatus;
 
