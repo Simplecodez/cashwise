@@ -1,5 +1,5 @@
 import { inject, singleton } from 'tsyringe';
-import { IPaymentProvider } from '../interfaces/payment.interface';
+import { IPaystackPaymentProvider } from '../interfaces/paystack-payment.interface';
 import { PaymentProvider } from '../enum/payment.enum';
 import { AppError } from '../../../utils/app-error.utils';
 import { HttpStatus } from '../../../common/http-codes/codes';
@@ -14,9 +14,42 @@ import { TransactionCrudService } from '../../../account/services/transaction/tr
 @singleton()
 export class PaymentService {
   constructor(
-    @inject('Paystack') private readonly paystackService: IPaymentProvider,
+    @inject('Paystack') private readonly paystackService: IPaystackPaymentProvider,
     private readonly transactionCrudService: TransactionCrudService
   ) {}
+
+  async verifyAccountDetailBeforeTransfer(accountNumber: string, bankCode: string) {
+    return this.paystackService.verifyAccountDetailBeforeExternalTransfer(
+      accountNumber,
+      bankCode
+    );
+  }
+
+  async createExternalTransferRecipient(
+    customerName: string,
+    accountNumber: string,
+    bankCode: string
+  ) {
+    return this.paystackService.createExternalTransferRecipient(
+      customerName,
+      accountNumber,
+      bankCode
+    );
+  }
+
+  async initiateExternalTransfer(
+    amount: number,
+    recipient: string,
+    reference: string,
+    reason?: string
+  ) {
+    return this.paystackService.initiateExternalTransfer(
+      amount,
+      recipient,
+      reference,
+      reason
+    );
+  }
 
   async initializeTransaction(
     provider: PaymentProvider,

@@ -21,6 +21,7 @@ export type Data = {
   channel?: string;
   currency?: string;
   ip_address?: string;
+  session: {};
   metadata?: any;
 
   message?: any;
