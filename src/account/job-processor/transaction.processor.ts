@@ -4,12 +4,14 @@ import { TransactionJobType } from '../enum/transaction.enum';
 import { PaymentService } from '../../integrations/payments/services/payment.service';
 import { InternalTransactionService } from '../services/transaction/internal-transaction.service';
 import { AppError } from '../../utils/app-error.utils';
+import { ExternalTransactionService } from '../services/transaction/external-transaction.service';
 
 @singleton()
 export class TransactionProcessor {
   constructor(
     private readonly paymentService: PaymentService,
-    private readonly internalTransactionService: InternalTransactionService
+    private readonly internalTransactionService: InternalTransactionService,
+    private readonly externalTransactionService: ExternalTransactionService
   ) {}
 
   async process(job: Job): Promise<void> {
@@ -39,6 +41,12 @@ export class TransactionProcessor {
               throw error;
           }
         }
+      }
+
+      case TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK: {
+        try {
+          await this.externalTransactionService.processExternalTransfer(job.data);
+        } catch (error) {}
       }
 
       default:

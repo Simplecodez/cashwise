@@ -1,8 +1,10 @@
 import { singleton } from 'tsyringe';
 import { catchAsync } from '../../utils/catch-async.utils';
 import {
+  initiateExternalTransferValidator,
   initializeTransactionValidator,
-  internalTransferValidator
+  internalTransferValidator,
+  verifyExternalAccountValidator
 } from '../validator/transaction.validator';
 import { IRequest } from '../../user/interfaces/user.interface';
 import { Request } from 'express';
@@ -18,7 +20,7 @@ export class TransactionController {
   transferToInternalAccount() {
     return catchAsync(async (req: IRequest | Request, res) => {
       await internalTransferValidator.validateAsync(req.body, { convert: false });
-      const { approvedKycLevel, id: userId } = (req as IRequest).user;
+      const { id: userId, approvedKycLevel } = (req as IRequest).user;
 
       const { receiverAccountNumber, senderAccountId, amount } =
         req.body as InternalTransferData;
@@ -28,9 +30,14 @@ export class TransactionController {
           senderAccountId,
           receiverAccountNumber,
           userId,
-          amount,
-          approvedKycLevel
+          amount
         );
+
+      await this.transactionService.checkTransactionLimit(
+        senderAccountId,
+        amount,
+        approvedKycLevel
+      );
 
       this.transactionService.initializeInternalTransfer(
         TransactionJobType.INTERNAL_TRANSFER,
@@ -64,30 +71,113 @@ export class TransactionController {
     });
   }
 
-  handleDepositTransaction() {
+  verifyExternalUserAccountDetail() {
+    return catchAsync(async (req, res) => {
+      await verifyExternalAccountValidator.validateAsync(req.body);
+      const { accountNumber, bankCode } = req.body as {
+        accountNumber: string;
+        bankCode: string;
+      };
+      const result = await this.transactionService.verifyExternalAccountBeforeTransfer(
+        accountNumber,
+        bankCode
+      );
+
+      res.json({
+        status: 'success',
+        data: result.data.data
+      });
+    });
+  }
+
+  initiateExternalTransfer() {
     return catchAsync(async (req: IRequest | Request, res) => {
+      await initiateExternalTransferValidator.validateAsync(req.body);
+
+      const { id: userId, approvedKycLevel } = (req as IRequest).user;
+      const { customerName, accountNumber, bankCode, senderAccountId, amount, remark } =
+        req.body as {
+          customerName: string;
+          amount: number;
+          accountNumber: string;
+          senderAccountId: string;
+          bankCode: string;
+          remark: string;
+        };
+
+      const amountInLowerUnit =
+        await this.transactionService.validateSenderAccountandAmount(
+          amount,
+          senderAccountId,
+          userId
+        );
+
+      await this.transactionService.checkTransactionLimit(
+        senderAccountId,
+        amount,
+        approvedKycLevel
+      );
+
+      const message = await this.transactionService.initiateExternalTransfer(
+        senderAccountId,
+        customerName,
+        accountNumber,
+        bankCode,
+        amountInLowerUnit,
+        remark
+      );
+
+      res.json({
+        status: 'success',
+        message
+      });
+    });
+  }
+
+  handlePaystackTransactionWebhook() {
+    return catchAsync(async (req, res) => {
       const paystackSignature = req.headers['x-paystack-signature'] as string;
       const body = req.body as PaystackWebhookType;
       const { event, data } = body;
       console.log(body, paystackSignature);
 
       if (paystackSignature && body) {
-        if (
-          CommonUtils.verifyPaystackWebhookSignature(body, paystackSignature) &&
-          event === 'charge.success'
-        ) {
-          const { status, reference, amount } = data;
+        if (CommonUtils.verifyPaystackWebhookSignature(body, paystackSignature))
+          switch (event) {
+            case 'charge.success': {
+              const { status, reference, amount } = data;
 
-          if (status && reference && amount)
-            this.transactionService.addTransactionQueue(
-              TransactionJobType.DEPOSIT_PAYSTACK,
-              {
-                status,
-                reference,
-                amount
-              }
-            );
-        }
+              if (status && reference && amount)
+                this.transactionService.addTransactionQueue(
+                  TransactionJobType.DEPOSIT_PAYSTACK,
+                  {
+                    status,
+                    reference,
+                    amount
+                  }
+                );
+              break;
+            }
+            case 'transfer.success':
+            case 'transfer.failed':
+            case 'transfer.reversed': {
+              const { status, reference, amount, session } = data;
+
+              if (status && reference && amount)
+                this.transactionService.addTransactionQueue(
+                  TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK,
+                  {
+                    status,
+                    reference,
+                    amount,
+                    session
+                  }
+                );
+            }
+
+            default:
+              console.log('Unsupported event type');
+          }
       }
 
       res.json({

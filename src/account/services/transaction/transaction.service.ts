@@ -11,12 +11,17 @@ import { AppError } from '../../../utils/app-error.utils';
 import {
   TransactionGateway,
   TransactionJobType,
+  transactionLimit,
   TransactionOrigin,
   TransactionStatus,
   TransactionType
 } from '../../enum/transaction.enum';
 import { Transaction } from '../../entities/transaction.entity';
 import { Account } from '../../entities/account.entity';
+import { AccountQueue } from '../../job-processor/account.queue';
+import { AccountJobType } from '../../enum/account.enum';
+import { ExternalRecipient } from '../../entities/external-account.entity';
+import { ExternalTransactionService } from './external-transaction.service';
 import { KycLevel } from '../../../user/enum/kyc.enum';
 
 @singleton()
@@ -27,15 +32,62 @@ export class TransactionService {
     private readonly paymentService: PaymentService,
     private readonly transactionCrudService: TransactionCrudService,
     private readonly accountService: AccountService,
-    private readonly transactionQueue: TransactionQueue
+    private readonly transactionQueue: TransactionQueue,
+    private readonly accountQueue: AccountQueue,
+    private readonly externalTransactionService: ExternalTransactionService
   ) {}
+
+  async checkTransactionLimit(
+    senderAccountId: string,
+    amount: number,
+    approvedKycLevel: KycLevel
+  ) {
+    if (approvedKycLevel === KycLevel.LEVEL_3) return;
+    const dailyLimit = transactionLimit[approvedKycLevel];
+    const amountInLowerUnit = amount * 100;
+
+    const dailyTotal =
+      await this.transactionCrudService.calculateDailyTotalSuccessTransfer(
+        senderAccountId
+      );
+
+    if (dailyTotal + amountInLowerUnit >= dailyLimit) {
+      throw new AppError(
+        'Daily transaction limit reached. Upgrade your KYC level to increase your limit',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+    return;
+  }
 
   async validateInternalTransferDetail(
     senderAccountId: string,
     receiverAccountNumber: string,
     userId: string,
+    amount: number
+  ) {
+    const amountInLowerUnit = await this.validateSenderAccountandAmount(
+      amount,
+      senderAccountId,
+      userId
+    );
+
+    const findReceiverAccountOptions: FindOneOptions<Account> = {
+      where: { accountNumber: receiverAccountNumber }
+    };
+
+    const receiverAccount = await this.accountService.findOne(findReceiverAccountOptions);
+
+    if (!receiverAccount)
+      throw new AppError('Invalid receiver account', HttpStatus.NOT_FOUND);
+
+    return { receiverAccountId: receiverAccount.id, amountInLowerUnit };
+  }
+
+  async validateSenderAccountandAmount(
     amount: number,
-    approvedKycLevel: KycLevel
+    senderAccountId: string,
+    userId: string
   ) {
     const amountInLowerUnit = Number(amount) * 100;
     const requiredAvailableFunds =
@@ -51,21 +103,81 @@ export class TransactionService {
     if (requiredAvailableFunds > senderAccount.balance)
       throw new AppError('Insufficient balance', HttpStatus.UNPROCESSABLE_ENTITY);
 
-    const findReceiverAccountOptions: FindOneOptions<Account> = {
-      where: { accountNumber: receiverAccountNumber }
-    };
-
-    const receiverAccount = await this.accountService.findOne(findReceiverAccountOptions);
-    if (!receiverAccount)
-      throw new AppError('Invalid receiver account', HttpStatus.NOT_FOUND);
-
-    return { receiverAccountId: receiverAccount.id, amountInLowerUnit };
+    return amountInLowerUnit;
   }
 
-  initializeInternalTransfer(transactionJobType: TransactionJobType, data: any) {
+  async initializeInternalTransfer(transactionJobType: TransactionJobType, data: any) {
     const reference = this.generateReferenceId();
     const transferData = { ...data, reference };
     return this.addTransactionQueue(transactionJobType, transferData);
+  }
+
+  async verifyExternalAccountBeforeTransfer(accountNumber: string, bankCode: string) {
+    return this.paymentService.verifyAccountDetailBeforeTransfer(accountNumber, bankCode);
+  }
+
+  async initiateExternalTransfer(
+    senderAccountId: string,
+    customerName: string,
+    accountNumber: string,
+    bankCode: string,
+    amount: number,
+    remark?: string
+  ) {
+    const externalAccountRecipient = await this.accountService.findOneExternalAccount({
+      where: { bankCode, accountNumber }
+    });
+
+    let { recipientCode, bankName, accountName } = externalAccountRecipient || {};
+
+    if (!externalAccountRecipient) {
+      const recipient = await this.paymentService.createExternalTransferRecipient(
+        customerName,
+        accountNumber,
+        bankCode
+      );
+
+      const {
+        active,
+        details: { account_number, account_name, bank_code, bank_name },
+        recipient_code
+      } = recipient.data.data;
+
+      if (!active) throw new AppError('Invalid account number', HttpStatus.BAD_REQUEST);
+
+      this.accountQueue.addJob(AccountJobType.EXTERNAL_ACCOUNT_CREATION, {
+        accountName: account_name,
+        accountNumber: account_number,
+        recipientCode: recipient_code,
+        bankCode: bank_code,
+        bankName: bank_name
+      } as Partial<ExternalRecipient>);
+
+      recipientCode = recipient_code;
+      bankName = bank_name;
+      accountName = account_name;
+    }
+
+    const reference = this.generateReferenceId();
+
+    await this.externalTransactionService.debitAccountForExternalTransfer(
+      senderAccountId,
+      amount,
+      bankName as string,
+      accountName as string,
+      accountNumber,
+      reference,
+      remark as string
+    );
+
+    // Works but needs a registered business Paystack account
+    // return this.paymentService.initiateExternalTransfer(
+    //   amount,
+    //   recipientCode as string,
+    //   reference,
+    //   remark
+    // );
+    return 'Transaction successful'; // returned for now, will bw removed once Paystack account is resolved
   }
 
   async initiateDeposit(

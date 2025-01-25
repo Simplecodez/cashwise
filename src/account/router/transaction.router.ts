@@ -19,6 +19,15 @@ export class TransactionRouter {
     this.router.use(checkKycLevel());
     this.router.post('/initiate-deposit', this.transactionController.initiateDeposit());
     this.router.post(
+      '/verify-external-account',
+      this.transactionController.verifyExternalUserAccountDetail()
+    );
+
+    this.router.post(
+      '/initiate-external-transfer',
+      this.transactionController.initiateExternalTransfer()
+    );
+    this.router.post(
       '/initiate-internal-transfer',
       this.transactionController.transferToInternalAccount()
     );
