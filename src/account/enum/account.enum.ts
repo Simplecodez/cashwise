@@ -11,5 +11,6 @@ export enum AccountStatus {
 }
 
 export enum AccountJobType {
-  CREATION = 'creation'
+  CREATION = 'creation',
+  EXTERNAL_ACCOUNT_CREATION = 'external.account.creation'
 }

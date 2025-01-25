@@ -11,7 +11,11 @@ export class AccountProcessor {
     switch (job.name) {
       case AccountJobType.CREATION: {
         await this.accountService.createAccount(job.data);
+        break;
+      }
 
+      case AccountJobType.EXTERNAL_ACCOUNT_CREATION: {
+        await this.accountService.createExternalRecipient(job.data);
         break;
       }
 

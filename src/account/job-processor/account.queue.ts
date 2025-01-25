@@ -5,6 +5,7 @@ import { BaseQueue } from '../../configs/bull/bullmq.base';
 import { AccountProcessor } from './account.processor';
 import { AccountJobType } from '../enum/account.enum';
 import { Account } from '../entities/account.entity';
+import { ExternalRecipient } from '../entities/external-account.entity';
 
 @singleton()
 export class AccountQueue extends BaseQueue {
@@ -29,7 +30,10 @@ export class AccountQueue extends BaseQueue {
     );
   }
 
-  async addJob(name: AccountJobType, data: Partial<Account>): Promise<void> {
+  async addJob(
+    name: AccountJobType,
+    data: Partial<Account> | Partial<ExternalRecipient>
+  ): Promise<void> {
     await this.queue.add(name, data);
   }
 
