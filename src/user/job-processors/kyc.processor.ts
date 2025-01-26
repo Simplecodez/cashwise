@@ -25,7 +25,7 @@ export class KycProcessor {
     try {
       switch (job.name) {
         case KycJobType.BVN_VERIFICATION: {
-          const { bvn: encrytedBvn, userId } = job.data;
+          const { bvn: encrytedBvn, userId, username } = job.data;
           const bvn = await Encryption.decrypt(encrytedBvn as string);
 
           const verificationResult = await this.bvnService.verifyBvn(
@@ -47,6 +47,7 @@ export class KycProcessor {
               userId,
               name: CommonUtils.generateRandomAccountName(),
               balance: 0,
+              username,
               type: AccountType.SAVINGS,
               status: AccountStatus.ACTIVE
             };

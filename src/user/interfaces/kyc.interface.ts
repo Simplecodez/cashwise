@@ -11,5 +11,6 @@ export interface IKycUpdate {
   nin?: string;
   userId: string;
   documentUrlId?: string;
+  username?: string;
   level?: KycLevel;
 }

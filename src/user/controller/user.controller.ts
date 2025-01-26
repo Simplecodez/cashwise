@@ -22,12 +22,18 @@ export class UserController {
 
   updateKyc() {
     return catchAsync(async (req: IRequest | Request, res) => {
-      const user = (req as IRequest).user;
-      await validateKycUpdate(user.approvedKycLevel, req.body);
+      const {
+        id: userId,
+        approvedKycLevel,
+        firstName,
+        lastName
+      } = (req as IRequest).user;
+      await validateKycUpdate(approvedKycLevel, req.body);
 
       const message = await this.kycService.updateKyc({
         ...req.body,
-        userId: user.id
+        userId,
+        username: `${firstName} ${lastName}`
       });
 
       res.json({
