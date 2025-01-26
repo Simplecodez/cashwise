@@ -7,6 +7,10 @@ const accountIdSchema = Joi.string()
 const accountNumberSchema = Joi.string().length(10).required();
 const remarkSchema = Joi.string().length(120).optional();
 
+export const getAccountTransactionValidator = Joi.object({
+  id: accountIdSchema
+});
+
 export const initializeTransactionValidator = Joi.object({
   provider: Joi.valid('paystack', 'stripe').required(),
   amount: amountSchema,

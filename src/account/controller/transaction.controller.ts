@@ -4,7 +4,8 @@ import {
   initiateExternalTransferValidator,
   initializeTransactionValidator,
   internalTransferValidator,
-  verifyExternalAccountValidator
+  verifyExternalAccountValidator,
+  getAccountTransactionValidator
 } from '../validator/transaction.validator';
 import { IRequest } from '../../user/interfaces/user.interface';
 import { Request } from 'express';
@@ -12,6 +13,8 @@ import { CommonUtils } from '../../utils/common.utils';
 import { InternalTransferData, TransactionJobType } from '../enum/transaction.enum';
 import { PaystackWebhookType } from '../../integrations/payments/enum/payment.enum';
 import { TransactionService } from '../services/transaction/transaction.service';
+import { paginationValidator } from '../../common/pagination/pagination/validator';
+import { PaginationParams } from '../../common/pagination/pagination/pagination.args';
 
 @singleton()
 export class TransactionController {
@@ -139,7 +142,6 @@ export class TransactionController {
       const paystackSignature = req.headers['x-paystack-signature'] as string;
       const body = req.body as PaystackWebhookType;
       const { event, data } = body;
-      console.log(body, paystackSignature);
 
       if (paystackSignature && body) {
         if (CommonUtils.verifyPaystackWebhookSignature(body, paystackSignature))
@@ -182,6 +184,29 @@ export class TransactionController {
 
       res.json({
         status: 'success'
+      });
+    });
+  }
+
+  getAccountTransactions() {
+    return catchAsync(async (req: IRequest | Request, res) => {
+      await paginationValidator.validateAsync(req.query);
+      const { nextCursor, limit } = req.query;
+      const { id: userId } = (req as IRequest).user;
+      const paginationParams: PaginationParams = {
+        first: Number(limit),
+        ...(nextCursor ? { after: nextCursor as string } : {})
+      };
+      await getAccountTransactionValidator.validateAsync(req.params);
+      const transactions = await this.transactionService.getAccountTransactions(
+        userId,
+        req.params.id,
+        paginationParams
+      );
+
+      res.json({
+        status: 'success',
+        transactions
       });
     });
   }

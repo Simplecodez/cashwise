@@ -1,4 +1,11 @@
-import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  AfterLoad,
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn
+} from 'typeorm';
 import {
   ExternalBankUserDetail,
   TransactionGateway,
@@ -26,7 +33,7 @@ export class Transaction extends AbstractEntity {
   @Column({ type: 'uuid', nullable: true })
   receiverAccountId: string;
 
-  @ManyToOne(() => Account, (user) => user.receivedTransactions, { nullable: true })
+  @ManyToOne(() => Account, (account) => account.receivedTransactions, { nullable: true })
   receiverAccount: Account;
 
   @Column({ type: 'jsonb', nullable: true })
@@ -54,10 +61,10 @@ export class Transaction extends AbstractEntity {
   @Column({ type: 'varchar' })
   origin: TransactionOrigin;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true, select: false })
   accessCode: string;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar', select: false })
   gateway: TransactionGateway;
 
   @Column({ type: 'text', nullable: true })
@@ -66,7 +73,10 @@ export class Transaction extends AbstractEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   failureReason: string;
 
-  get amountInBaseUnit(): number {
-    return this.amount / 100;
+  amountInNaira: string;
+
+  @AfterLoad()
+  convertToNaira() {
+    this.amountInNaira = (this.amount / 100).toFixed(2);
   }
 }

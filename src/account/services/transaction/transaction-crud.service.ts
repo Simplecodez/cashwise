@@ -8,6 +8,12 @@ import {
   TransactionType
 } from '../../enum/transaction.enum';
 import { Account } from '../../entities/account.entity';
+import { PaginationParams } from '../../../common/pagination/pagination/pagination.args';
+import { FiltersExpression } from '../../../common/pagination/lib/interface/filters-expression.input';
+import { ComparisonOperatorEnum } from '../../../common/pagination/lib/enum/comparison-operator.enum';
+import { LogicalOperatorEnum } from '../../../common/pagination/lib/enum/logical-operator.enum';
+import { FilterQueryBuilder } from '../../../common/pagination/lib/query-builder/filter-query-builder';
+import { paginate } from '../../../common/pagination/pagination/paginate';
 
 @singleton()
 export class TransactionCrudService {
@@ -26,13 +32,52 @@ export class TransactionCrudService {
     return this.transactionRepository.findOne(options);
   }
 
+  async getOneAccountTransactions(accountId: string, paginationParams: PaginationParams) {
+    const filter: FiltersExpression = {
+      filters: [
+        {
+          field: 'senderAccountId',
+          operator: ComparisonOperatorEnum.EQUAL,
+          value: accountId
+        },
+        {
+          field: 'receiverAccountId',
+          operator: ComparisonOperatorEnum.EQUAL,
+          value: accountId
+        },
+        {
+          field: 'Sender.id',
+          relationField: 'Transaction.senderAccount',
+          selectFields: [
+            'Transaction',
+            'Sender.name',
+            'Sender.accountNumber',
+            'Sender.username'
+          ]
+        },
+        {
+          field: 'Receiver.id',
+          relationField: 'Transaction.receiverAccount',
+          selectFields: ['Receiver.name', 'Receiver.accountNumber', 'Receiver.username']
+        }
+      ],
+      operator: LogicalOperatorEnum.OR
+    };
+    const query = new FilterQueryBuilder<Transaction>(
+      this.transactionRepository,
+      'Transaction',
+      filter
+    );
+    const result = await paginate(query.build(), paginationParams, 'createdAt');
+    return result;
+  }
+
   async calculateDailyTotalSuccessTransfer(senderAccountId: string) {
     const startOfDay = new Date();
     startOfDay.setUTCHours(0, 0, 0, 0);
 
     const endOfDay = new Date();
     endOfDay.setUTCHours(23, 59, 59, 999);
-    console.log(startOfDay, endOfDay);
 
     const result = await this.transactionRepository
       .createQueryBuilder('transaction')
@@ -45,7 +90,6 @@ export class TransactionCrudService {
       })
       .getRawOne();
 
-    console.log(result.total);
     return parseFloat(result?.total || 0);
   }
 

@@ -41,12 +41,14 @@ export class TransactionProcessor {
               throw error;
           }
         }
+        break;
       }
 
       case TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK: {
         try {
           await this.externalTransactionService.processExternalTransfer(job.data);
         } catch (error) {}
+        break;
       }
 
       default:
