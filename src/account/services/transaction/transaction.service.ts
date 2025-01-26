@@ -23,6 +23,7 @@ import { AccountJobType } from '../../enum/account.enum';
 import { ExternalRecipient } from '../../entities/external-account.entity';
 import { ExternalTransactionService } from './external-transaction.service';
 import { KycLevel } from '../../../user/enum/kyc.enum';
+import { PaginationParams } from '../../../common/pagination/pagination/pagination.args';
 
 @singleton()
 export class TransactionService {
@@ -253,5 +254,21 @@ export class TransactionService {
       gateway: TransactionGateway.PAYSTACK,
       remark
     };
+  }
+
+  async getAccountTransactions(
+    userId: string,
+    accountId: string,
+    paginationParams: PaginationParams
+  ) {
+    const account = await this.accountService.findOne({
+      where: { id: accountId, userId }
+    });
+    if (!account) throw new AppError('Invalid account', HttpStatus.NOT_FOUND);
+
+    return this.transactionCrudService.getOneAccountTransactions(
+      accountId,
+      paginationParams
+    );
   }
 }
