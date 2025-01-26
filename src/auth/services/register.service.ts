@@ -12,6 +12,8 @@ import { HttpStatus } from '../../common/http-codes/codes';
 import { UserVerificationData } from '../interface/auth.interface';
 import { SendEmailOtp } from './send-email-otp.service';
 import { EmailType } from '../../communication/email/enum/email.enum';
+import { FindOneOptions } from 'typeorm';
+import { User } from '../../user/entities/user.entity';
 
 @singleton()
 export class RegisterService {
@@ -42,6 +44,15 @@ export class RegisterService {
       isVerified: false,
       createdAt: Date.now()
     };
+
+    const options: FindOneOptions<User> = {
+      where: { phoneNumber }
+    };
+
+    const user = await this.userService.findUserByOptions(options);
+
+    if (user)
+      throw new AppError('Phone number is already in use', HttpStatus.BAD_REQUEST);
 
     const sessionId = uuidv4();
 
