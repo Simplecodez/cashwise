@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
 export const paginationValidator = Joi.object({
-  nextCursor: Joi.string().optional().base64({ paddingRequired: false }),
-  limit: Joi.number().integer().min(5).max(15).required()
+  nextCursor: Joi.string().base64({ paddingRequired: false }).optional(),
+  limit: Joi.number().integer().min(2).max(15).required()
 });

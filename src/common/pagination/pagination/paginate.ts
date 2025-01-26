@@ -89,15 +89,17 @@ function formatDataToIncludePageInfo<T extends object>(
     const startId = (firstData as IIndexable)['id'];
     const startColumnId = formatDbField((firstData as IIndexable)[columnId]);
     const nextId = (lastData as IIndexable)['id'];
+
     const nextColumnId = formatDbField((lastData as IIndexable)[columnId]);
 
     startCursor = Cursor.encode(`${startColumnId}${multiColumnDelimiter}${startId}`);
-    nextCursor = Cursor.encode(`${nextColumnId}${multiColumnDelimiter}${nextId}`);
+    if (dbResult.length > limit)
+      nextCursor = Cursor.encode(`${nextColumnId}${multiColumnDelimiter}${nextId}`);
   } else {
     const startColumnId = formatDbField((firstData as IIndexable)[columnId]);
     const nextColumnId = formatDbField((lastData as IIndexable)[columnId]);
     startCursor = Cursor.encode(startColumnId);
-    nextCursor = Cursor.encode(nextColumnId);
+    if (dbResult.length > limit) nextCursor = Cursor.encode(nextColumnId);
   }
 
   return {
@@ -148,6 +150,7 @@ function cursorWhereClause<T extends object>(
       );
     }
   });
+
   if (query.expressionMap.wheres && query.expressionMap.wheres.length) {
     query.andWhere(whereExpression);
   } else {

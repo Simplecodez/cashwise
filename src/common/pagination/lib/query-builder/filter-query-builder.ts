@@ -18,10 +18,10 @@ export class FilterQueryBuilder<T extends object> {
   build() {
     const joinBuilder = new JoinBuilder(this.qb, this.filterExpression);
     joinBuilder.build();
+    const selectBuilder = new SelectBuilder(this.qb, this.filterExpression);
+    selectBuilder.build();
     const whereBuilder = new WhereBuilder(this.qb, this.filterExpression);
     whereBuilder.build();
-    // const selectBuilder = new SelectBuilder(this.qb, this.filterExpression);
-    // selectBuilder.build();
 
     return this.qb;
   }

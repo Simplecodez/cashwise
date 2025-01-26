@@ -9,28 +9,17 @@ export class SelectBuilder<T extends object> {
 
   build() {
     const selectFieldArray = this.filterExpression.filters?.map((filter) => {
-      const entityAlias = filter.field.split('.')[0].toLowerCase();
       if (!filter.selectFields || filter.selectFields.length === 0) {
         return [];
       }
-      return filter?.selectFields?.map((selectField) => `${entityAlias}.${selectField}`);
+      return filter?.selectFields;
     });
     if (selectFieldArray && selectFieldArray.length > 0) {
       const selectFields = selectFieldArray?.flat();
-      console.log(selectFields);
+
       if (selectFields && selectFields.length > 0) {
-        this.qb.select(['Event.id', ' Event.created_at']);
+        this.qb.select(selectFields);
       }
     }
   }
 }
-
-// filter = [
-//   { field
-//     select: ['a']
-//   },
-//   {
-//     field
-//     select: ['a']
-//   }
-// ]
