@@ -25,13 +25,19 @@ export class AccountController {
 
   createAccount() {
     return catchAsync(async (req: IRequest | Request, res) => {
-      const user = (req as IRequest).user;
-      await accountCreateValidation(req.body, user.approvedKycLevel);
+      const {
+        id: userId,
+        approvedKycLevel,
+        firstName,
+        lastName
+      } = (req as IRequest).user;
+      await accountCreateValidation(req.body, approvedKycLevel);
 
       const accountCreationData: Partial<Account> = {
-        userId: user.id,
+        userId,
         name: req.body?.accountName || CommonUtils.generateRandomAccountName(),
         balance: 0,
+        username: `${firstName} ${lastName}`,
         type: AccountType.SAVINGS,
         status: AccountStatus.ACTIVE
       };
