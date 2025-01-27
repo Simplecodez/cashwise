@@ -32,6 +32,28 @@ export class TransactionCrudService {
     return this.transactionRepository.findOne(options);
   }
 
+  async findOneTransaction(accountId: string, reference: string) {
+    return this.transactionRepository
+      .createQueryBuilder('transaction')
+      .leftJoinAndSelect('transaction.senderAccount', 'senderAccount')
+      .leftJoinAndSelect('transaction.receiverAccount', 'receiverAccount')
+      .select([
+        'transaction',
+        'senderAccount.name',
+        'senderAccount.username',
+        'senderAccount.accountNumber',
+        'receiverAccount.name',
+        'receiverAccount.username',
+        'receiverAccount.accountNumber'
+      ])
+      .where(
+        '(transaction.receiverAccountId = :accountId AND transaction.reference = :reference) ' +
+          'OR (transaction.senderAccountId = :accountId AND transaction.reference = :reference)',
+        { reference, accountId }
+      )
+      .getOne();
+  }
+
   async getOneAccountTransactions(accountId: string, paginationParams: PaginationParams) {
     const filter: FiltersExpression = {
       filters: [

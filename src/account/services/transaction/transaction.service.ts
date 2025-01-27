@@ -74,7 +74,13 @@ export class TransactionService {
     );
 
     const findReceiverAccountOptions: FindOneOptions<Account> = {
-      where: { accountNumber: receiverAccountNumber }
+      where: { accountNumber: receiverAccountNumber },
+      relations: ['user'],
+      select: {
+        id: true,
+        user: { firstName: true, lastName: true },
+        accountNumber: true
+      }
     };
 
     const receiverAccount = await this.accountService.findOne(findReceiverAccountOptions);
@@ -82,7 +88,11 @@ export class TransactionService {
     if (!receiverAccount)
       throw new AppError('Invalid receiver account', HttpStatus.NOT_FOUND);
 
-    return { receiverAccountId: receiverAccount.id, amountInLowerUnit };
+    return {
+      receiverAccountId: receiverAccount.id,
+      amountInLowerUnit,
+      receiverName: `${receiverAccount.user.firstName} ${receiverAccount.user.lastName}`
+    };
   }
 
   async validateSenderAccountandAmount(
@@ -270,5 +280,20 @@ export class TransactionService {
       accountId,
       paginationParams
     );
+  }
+
+  async getAccountTransaction(userId: string, accountId: string, reference: string) {
+    const account = await this.accountService.findOne({
+      where: { id: accountId, userId }
+    });
+
+    if (!account) throw new AppError('Invalid account', HttpStatus.NOT_FOUND);
+
+    const transaction = await this.transactionCrudService.findOneTransaction(
+      accountId,
+      reference
+    );
+    if (!transaction) throw new AppError('Transaction not found', HttpStatus.NOT_FOUND);
+    return transaction;
   }
 }

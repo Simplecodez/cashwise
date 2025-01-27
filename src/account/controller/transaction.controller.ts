@@ -5,7 +5,8 @@ import {
   initializeTransactionValidator,
   internalTransferValidator,
   verifyExternalAccountValidator,
-  getAccountTransactionValidator
+  getAccountTransactionValidator,
+  getAccountTransactionsValidator
 } from '../validator/transaction.validator';
 import { IRequest } from '../../user/interfaces/user.interface';
 import { Request } from 'express';
@@ -28,7 +29,7 @@ export class TransactionController {
       const { receiverAccountNumber, senderAccountId, amount } =
         req.body as InternalTransferData;
 
-      const { receiverAccountId, amountInLowerUnit } =
+      const { receiverAccountId, amountInLowerUnit, receiverName } =
         await this.transactionService.validateInternalTransferDetail(
           senderAccountId,
           receiverAccountNumber,
@@ -44,7 +45,14 @@ export class TransactionController {
 
       this.transactionService.initializeInternalTransfer(
         TransactionJobType.INTERNAL_TRANSFER,
-        { ...req.body, userId, amount: amountInLowerUnit, receiverAccountId }
+        {
+          ...req.body,
+          userId,
+          amount: amountInLowerUnit,
+          receiverAccountId,
+          receiverAccountNumber,
+          receiverName
+        }
       );
 
       res.json({
@@ -197,7 +205,7 @@ export class TransactionController {
         first: Number(limit),
         ...(nextCursor ? { after: nextCursor as string } : {})
       };
-      await getAccountTransactionValidator.validateAsync(req.params);
+      await getAccountTransactionsValidator.validateAsync(req.params);
       const transactions = await this.transactionService.getAccountTransactions(
         userId,
         req.params.id,
@@ -207,6 +215,23 @@ export class TransactionController {
       res.json({
         status: 'success',
         transactions
+      });
+    });
+  }
+
+  getAccountTransaction() {
+    return catchAsync(async (req: IRequest | Request, res) => {
+      const { id: userId } = (req as IRequest).user;
+      await getAccountTransactionValidator.validateAsync(req.params);
+      const { id: accoundId, reference } = req.params;
+      const transaction = await this.transactionService.getAccountTransaction(
+        userId,
+        accoundId,
+        reference
+      );
+      res.json({
+        status: 'success',
+        transaction
       });
     });
   }

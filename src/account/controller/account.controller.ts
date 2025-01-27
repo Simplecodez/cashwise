@@ -6,6 +6,8 @@ import { Account } from '../entities/account.entity';
 import {
   accountCreateValidation,
   confirmAccountValidator,
+  deleteAccountBeneficiaryValidator,
+  getAccountBeneficiaryValidator,
   getOneUserAccountValidator
 } from '../validator/account.validator';
 import { CommonUtils } from '../../utils/common.utils';
@@ -15,12 +17,16 @@ import { AccountService } from '../services/account.service';
 import { FindOneOptions } from 'typeorm';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
+import { BeneficiaryService } from '../services/beneficiary.service';
+import { paginationValidator } from '../../common/pagination/pagination/validator';
+import { PaginationParams } from '../../common/pagination/pagination/pagination.args';
 
 @singleton()
 export class AccountController {
   constructor(
     private readonly accountQueue: AccountQueue,
-    private readonly accountService: AccountService
+    private readonly accountService: AccountService,
+    private readonly beneficiaryService: BeneficiaryService
   ) {}
 
   createAccount() {
@@ -86,6 +92,44 @@ export class AccountController {
       const accounts = await this.accountService.findAll(userId);
 
       res.json({ status: 'success', accounts });
+    });
+  }
+
+  getAccountBeneficiaries() {
+    return catchAsync(async (req: IRequest | Request, res) => {
+      await paginationValidator.validateAsync(req.query);
+      await getAccountBeneficiaryValidator.validateAsync(req.params);
+      const { id: accountId } = req.params;
+      const { nextCursor, limit } = req.query;
+      const { id: userId } = (req as IRequest).user;
+      const paginationParams: PaginationParams = {
+        first: Number(limit),
+        ...(nextCursor ? { after: nextCursor as string } : {})
+      };
+
+      const beneficiaries = await this.beneficiaryService.getAccountBeneficiaries(
+        userId,
+        accountId,
+        paginationParams
+      );
+
+      res.json({
+        status: 'success',
+        beneficiaries
+      });
+    });
+  }
+
+  deleteAccountBeneficiary() {
+    return catchAsync(async (req: IRequest | Request, res) => {
+      await deleteAccountBeneficiaryValidator.validateAsync(req.params);
+      const { id: userId } = (req as IRequest).user;
+      const { id: accountId, beneficiaryId } = req.params;
+      await this.beneficiaryService.delete(beneficiaryId, accountId, userId);
+      
+      res.status(HttpStatus.NO_CONTENT).json({
+        status: 'success'
+      });
     });
   }
 }
