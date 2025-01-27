@@ -18,6 +18,14 @@ export class AccountRouter {
     this.router.post('/', this.accountController.createAccount());
     this.router.get('/', this.accountController.getAllUserAccounts());
     this.router.get('/:id', this.accountController.getUserAccount());
+    this.router.get(
+      '/:id/beneficiaries',
+      this.accountController.getAccountBeneficiaries()
+    );
+    this.router.delete(
+      '/:id/beneficiaries/:beneficiaryId',
+      this.accountController.deleteAccountBeneficiary()
+    );
     this.router.get('/confirm/:accountNumber', this.accountController.confirmAccount());
   }
 
