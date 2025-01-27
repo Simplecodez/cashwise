@@ -33,6 +33,10 @@ export class TransactionRouter {
     );
 
     this.router.get('/account/:id', this.transactionController.getAccountTransactions());
+    this.router.get(
+      '/account/:id/:reference',
+      this.transactionController.getAccountTransaction()
+    );
   }
 
   getRouter() {
