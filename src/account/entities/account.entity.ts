@@ -10,6 +10,7 @@ import { User } from '../../user/entities/user.entity';
 import { AccountStatus, AccountType } from '../enum/account.enum';
 import { AbstractEntity } from '../../common/entities/abstract.entity';
 import { Transaction } from './transaction.entity';
+import { Beneficiary } from './beneficiary.entity';
 
 @Entity()
 @Index('account_number_uniq_Idx', ['accountNumber'], { unique: true })
@@ -46,4 +47,7 @@ export class Account extends AbstractEntity {
 
   @OneToMany(() => Transaction, (tx) => tx.receiverAccount)
   receivedTransactions: Transaction[];
+
+  @OneToMany(() => Beneficiary, (beneficiary) => beneficiary.account)
+  beneficiaries: Beneficiary[];
 }
