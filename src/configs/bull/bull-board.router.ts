@@ -7,6 +7,7 @@ import { CommunicationQueue } from '../../communication/job-processor/communicat
 import { KycQueue } from '../../user/job-processors/kyc.queue';
 import { AccountQueue } from '../../account/job-processor/account.queue';
 import { TransactionQueue } from '../../account/job-processor/transaction.queue';
+import { BeneficiaryQueue } from '../../account/job-processor/beneficiary.queue';
 
 @singleton()
 export class BullBoardRouter {
@@ -18,14 +19,16 @@ export class BullBoardRouter {
     private readonly communicationQueue: CommunicationQueue,
     private readonly kycQueue: KycQueue,
     private readonly accountQueue: AccountQueue,
-    private readonly transactionQueue: TransactionQueue
+    private readonly transactionQueue: TransactionQueue,
+    private readonly beneficiaryQueue: BeneficiaryQueue
   ) {
     this.serverAdapter = new ExpressAdapter();
     this.queues = [
       this.communicationQueue.getQueue(),
       this.kycQueue.getQueue(),
       this.accountQueue.getQueue(),
-      this.transactionQueue.getQueue()
+      this.transactionQueue.getQueue(),
+      this.beneficiaryQueue.getQueue()
     ];
     this.queueList = this.queues.map((queue) => new BullAdapter(queue));
     createBullBoard({
