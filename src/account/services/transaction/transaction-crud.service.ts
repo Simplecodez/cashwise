@@ -14,6 +14,8 @@ import { ComparisonOperatorEnum } from '../../../common/pagination/lib/enum/comp
 import { LogicalOperatorEnum } from '../../../common/pagination/lib/enum/logical-operator.enum';
 import { FilterQueryBuilder } from '../../../common/pagination/lib/query-builder/filter-query-builder';
 import { paginate } from '../../../common/pagination/pagination/paginate';
+import { Role } from '../../../user/enum/user.enum';
+import { formatDbQueryFilter, maskTransactions } from '../../../utils/db.utils';
 
 @singleton()
 export class TransactionCrudService {
@@ -223,6 +225,48 @@ export class TransactionCrudService {
 
       await transactionalEntityManager.insert(Transaction, newTransactionRecord);
     });
+  }
+
+  async getTransactions(
+    userRole: Role,
+    paginationParams: PaginationParams,
+    parsedFilter?: Record<string, string>
+  ) {
+    const columns: string[] = ['status', 'type', 'reference'];
+
+    const filtersExpression = formatDbQueryFilter(columns, parsedFilter) || {
+      filters: []
+    };
+
+    filtersExpression.filters?.push(
+      {
+        field: 'Sender.id',
+        relationField: 'Transaction.senderAccount',
+        selectFields: [
+          'Transaction',
+          'Sender.name',
+          'Sender.accountNumber',
+          'Sender.username'
+        ]
+      },
+      {
+        field: 'Receiver.id',
+        relationField: 'Transaction.receiverAccount',
+        selectFields: ['Receiver.name', 'Receiver.accountNumber', 'Receiver.username']
+      }
+    );
+
+    const query = new FilterQueryBuilder(
+      this.transactionRepository,
+      'Transaction',
+      filtersExpression
+    );
+
+    const result = await paginate(query.build(), paginationParams, 'createdAt');
+
+    if (userRole !== Role.SUPER_ADMIN) maskTransactions(result.data);
+
+    return result;
   }
 
   generationRecord(

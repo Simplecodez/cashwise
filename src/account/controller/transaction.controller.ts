@@ -14,7 +14,10 @@ import { CommonUtils } from '../../utils/common.utils';
 import { InternalTransferData, TransactionJobType } from '../enum/transaction.enum';
 import { PaystackWebhookType } from '../../integrations/payments/enum/payment.enum';
 import { TransactionService } from '../services/transaction/transaction.service';
-import { paginationValidator } from '../../common/pagination/pagination/validator';
+import {
+  paginationValidator,
+  validatePaginationParams
+} from '../../common/pagination/pagination/validator';
 import { PaginationParams } from '../../common/pagination/pagination/pagination.args';
 
 @singleton()
@@ -232,6 +235,27 @@ export class TransactionController {
       res.json({
         status: 'success',
         transaction
+      });
+    });
+  }
+
+  getAllTransactions() {
+    return catchAsync(async (req: IRequest | Request, res) => {
+      const { paginationParams, parsedFilter } = await validatePaginationParams(
+        req.query as { limit: string; nextCursor?: string; filter?: string }
+      );
+
+      const userRole = (req as IRequest).user.role;
+
+      const transactions = await this.transactionService.getTransactions(
+        userRole,
+        paginationParams,
+        parsedFilter
+      );
+
+      res.json({
+        status: 'success',
+        transactions
       });
     });
   }

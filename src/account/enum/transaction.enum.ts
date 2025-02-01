@@ -6,10 +6,6 @@ export enum TransactionType {
   REFUND = 'REFUND'
 }
 
-export enum TransactionEntryType {
-  CREDIT = 'credit',
-  DEBIT = 'debit'
-}
 
 export enum TransactionStatus {
   SUCCESS = 'success',

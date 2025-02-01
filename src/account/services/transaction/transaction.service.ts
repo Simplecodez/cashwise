@@ -24,6 +24,7 @@ import { ExternalRecipient } from '../../entities/external-account.entity';
 import { ExternalTransactionService } from './external-transaction.service';
 import { KycLevel } from '../../../user/enum/kyc.enum';
 import { PaginationParams } from '../../../common/pagination/pagination/pagination.args';
+import { Role } from '../../../user/enum/user.enum';
 
 @singleton()
 export class TransactionService {
@@ -295,5 +296,17 @@ export class TransactionService {
     );
     if (!transaction) throw new AppError('Transaction not found', HttpStatus.NOT_FOUND);
     return transaction;
+  }
+
+  async getTransactions(
+    userRole: Role,
+    paginationParams: PaginationParams,
+    parsedFilter?: Record<string, string>
+  ) {
+    return this.transactionCrudService.getTransactions(
+      userRole,
+      paginationParams,
+      parsedFilter
+    );
   }
 }
