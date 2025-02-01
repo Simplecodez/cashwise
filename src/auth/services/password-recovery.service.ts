@@ -7,13 +7,15 @@ import { SendEmailOtp } from './send-email-otp.service';
 import { EmailType } from '../../communication/email/enum/email.enum';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
+import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class PasswordRecoveryService {
   constructor(
     private readonly userService: UserService,
     private readonly sendEmailOTPService: SendEmailOtp,
-    private readonly cacheService: RedisCache
+    private readonly cacheService: RedisCache,
+    private readonly logger: Logger
   ) {}
 
   private getcacheKey(userId: string) {
@@ -28,7 +30,12 @@ export class PasswordRecoveryService {
 
     const user = await this.userService.findUserByOptions(options);
 
-    if (!user) return 'Please check your email for your password reset OTP';
+    if (!user) {
+      this.logger.appLogger.warn(
+        `Failed get password reset token attempt for user: ${email}. Timestamp: ${new Date().toISOString()}, Reason: Invalid credentials`
+      );
+      return 'Please check your email for your password reset OTP';
+    }
 
     if (!user.emailVerifiedAt) {
       const signupCacheKey = `user:signup:${user.id}`;
@@ -64,9 +71,12 @@ export class PasswordRecoveryService {
 
     const cachedOtp = await this.cacheService.get(cacheKey);
 
-    if (!cachedOtp || otp !== cachedOtp)
+    if (!cachedOtp || otp !== cachedOtp) {
+      this.logger.appLogger.warn(
+        `Failed password reset attempt for user: ${email}. Timestamp: ${new Date().toISOString()}, Reason: Invalid credentials`
+      );
       throw new AppError('Invalid or expired token', HttpStatus.UNAUTHORIZED);
-
+    }
     await this.userService.updateUserPassword(user.id, password);
 
     await this.cacheService.del(cacheKey);

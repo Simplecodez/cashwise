@@ -25,6 +25,7 @@ import { ExternalTransactionService } from './external-transaction.service';
 import { KycLevel } from '../../../user/enum/kyc.enum';
 import { PaginationParams } from '../../../common/pagination/pagination/pagination.args';
 import { Role } from '../../../user/enum/user.enum';
+import { Logger } from '../../../common/logger/logger';
 
 @singleton()
 export class TransactionService {
@@ -36,7 +37,8 @@ export class TransactionService {
     private readonly accountService: AccountService,
     private readonly transactionQueue: TransactionQueue,
     private readonly accountQueue: AccountQueue,
-    private readonly externalTransactionService: ExternalTransactionService
+    private readonly externalTransactionService: ExternalTransactionService,
+    private readonly logger: Logger
   ) {}
 
   async checkTransactionLimit(
@@ -110,22 +112,38 @@ export class TransactionService {
     };
     const senderAccount = await this.accountService.findOne(findSenderAccountOptions);
 
-    if (!senderAccount) throw new AppError('Invalid account', HttpStatus.NOT_FOUND);
+    if (!senderAccount) {
+      this.logger.appLogger.warn(
+        `Account not found: ID ${senderAccountId}, User ID ${userId}. Reason: Invalid account.`
+      );
+      throw new AppError('Invalid account', HttpStatus.NOT_FOUND);
+    }
 
-    if (senderAccount.status === AccountStatus.SUSPENDED)
+    if (senderAccount.status === AccountStatus.SUSPENDED) {
+      this.logger.appLogger.warn(
+        `Account with ID: ${senderAccountId} is suspended. User ID: ${userId}. Reason: Suspended account.`
+      );
       throw new AppError(
         'Your account has been suspended. Please contact Customer Service for assistance.',
         HttpStatus.FORBIDDEN
       );
+    }
 
-    if (senderAccount.status === AccountStatus.LOCKED)
+    if (senderAccount.status === AccountStatus.LOCKED) {
+      this.logger.appLogger.warn(
+        `Account locked: ID ${senderAccountId}, User ID ${userId}. Expected unlock time: 23 hours.`
+      );
       throw new AppError(
-        `Your account is currently locked and will be unlocked in approximately 23 hour(s)`,
+        'Your account is currently locked and will be unlocked in approximately 23 hour(s)',
         HttpStatus.LOCKED
       );
-
-    if (requiredAvailableFunds > senderAccount.balance)
+    }
+    if (requiredAvailableFunds > senderAccount.balance) {
+      this.logger.appLogger.warn(
+        `Insufficient balance: Account ID ${senderAccountId}, User ID ${userId}. Amount: ${amountInLowerUnit}.`
+      );
       throw new AppError('Insufficient balance', HttpStatus.UNPROCESSABLE_ENTITY);
+    }
 
     return amountInLowerUnit;
   }
@@ -232,8 +250,12 @@ export class TransactionService {
       reference
     });
 
-    if (!paymentResponse)
+    if (!paymentResponse) {
+      this.logger.appLogger.error(
+        `Payment initialization failed: Email: ${email}, Amount: ${amountInLowerunit}, Reference: ${reference}, Provider: ${provider}.`
+      );
       throw new AppError('Temporarily out of service', HttpStatus.BAD_GATEWAY);
+    }
 
     const newTransactionRecord = this.createNewTransactionRecord(
       receiverAccountId,

@@ -2,6 +2,9 @@ import { NextFunction, Request, Response } from 'express';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../http-codes/codes';
 import { AxiosError } from 'axios';
+import { container } from 'tsyringe';
+import { Logger } from '../logger/logger';
+const logger = container.resolve(Logger);
 
 export class GlobalErrorHandler {
   static handleValidationError(error: any) {
@@ -52,7 +55,7 @@ export class GlobalErrorHandler {
       });
     }
 
-    console.error('error', err);
+    logger.appLogger.error(err.message, err.stack);
 
     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       status: 'error',

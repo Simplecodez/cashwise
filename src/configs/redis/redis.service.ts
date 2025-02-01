@@ -1,17 +1,18 @@
 import Redis from 'ioredis';
 import { singleton } from 'tsyringe';
 import { redisConfigOptions } from './redis.config';
+import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class RedisCache {
   private redis: Redis;
-  constructor() {
+  constructor(private readonly logger: Logger) {
     this.redis = new Redis(redisConfigOptions);
     this.redis.on('connect', () => {
-      console.log('Redis connection established');
+      this.logger.appLogger.info('Redis connection established');
     });
     this.redis.on('error', (error) => {
-      console.log(error);
+      this.logger.appLogger.info(error);
     });
   }
 
@@ -40,16 +41,3 @@ export class RedisCache {
     return this.redis;
   }
 }
-
-// @singleton()
-// export class RedisBullClient {
-//   private redis: Redis;
-//   constructor() {
-//     this.redis = new Redis(redisConfigOptions);
-//     // this.redis = this.redis.setMaxListeners(25);
-//   }
-
-//   getRedisInstance() {
-//     return this.redis;
-//   }
-// }

@@ -8,6 +8,7 @@ import { UserRouter } from './user/router/user.router';
 import { AccountRouter } from './account/router/account.router';
 import { TransactionRouter } from './account/router/transaction.router';
 import { PaystackWebhookRouter } from './integrations/payments/router/paystack-webhook.router';
+import { Logger } from './common/logger/logger';
 
 @singleton()
 export class App {
@@ -19,7 +20,8 @@ export class App {
     private readonly accountRouter: AccountRouter,
     private readonly transactionRouter: TransactionRouter,
     private readonly paystackWebhookRouter: PaystackWebhookRouter,
-    private readonly bullboardRouter: BullBoardRouter
+    private readonly bullboardRouter: BullBoardRouter,
+    private readonly logger: Logger
   ) {
     this.app = express();
     this.initializeMiddleware();
@@ -29,6 +31,7 @@ export class App {
   }
 
   private initializeMiddleware() {
+    this.app.use(this.logger.morganMiddleware());
     this.app.use(express.json({ limit: '25kb' }));
   }
 
@@ -59,7 +62,7 @@ export class App {
 
   public start(port: number) {
     this.app.listen(port, () => {
-      console.log(`Application running on port ${port}`);
+      this.logger.appLogger.info(`Application running on port ${port}`);
     });
   }
 }

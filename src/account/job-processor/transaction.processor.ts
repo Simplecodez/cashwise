@@ -5,13 +5,15 @@ import { PaymentService } from '../../integrations/payments/services/payment.ser
 import { InternalTransactionService } from '../services/transaction/internal-transaction.service';
 import { AppError } from '../../utils/app-error.utils';
 import { ExternalTransactionService } from '../services/transaction/external-transaction.service';
+import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class TransactionProcessor {
   constructor(
     private readonly paymentService: PaymentService,
     private readonly internalTransactionService: InternalTransactionService,
-    private readonly externalTransactionService: ExternalTransactionService
+    private readonly externalTransactionService: ExternalTransactionService,
+    private readonly logger: Logger
   ) {}
 
   async process(job: Job): Promise<void> {
@@ -19,7 +21,8 @@ export class TransactionProcessor {
       case TransactionJobType.DEPOSIT_PAYSTACK: {
         try {
           await this.paymentService.handleDeposit(job.data);
-        } catch (error) {
+        } catch (error: any) {
+          this.logger.appLogger.error(error.message, error.stack);
           throw error;
         }
 
@@ -31,6 +34,7 @@ export class TransactionProcessor {
           await this.internalTransactionService.processInternalTransfer(job.data);
           //notify after successful transfer
         } catch (error: AppError | any) {
+          this.logger.appLogger.error(error.message, error.stack);
           switch (error?.message) {
             case 'Duplicate transaction': {
               // notify
@@ -47,7 +51,9 @@ export class TransactionProcessor {
       case TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK: {
         try {
           await this.externalTransactionService.processExternalTransfer(job.data);
-        } catch (error) {}
+        } catch (error: any) {
+          this.logger.appLogger.error(error.message, error.stack);
+        }
         break;
       }
 
