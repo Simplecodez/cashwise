@@ -10,12 +10,14 @@ import {
   TransactionStatus
 } from '../../../account/enum/transaction.enum';
 import { TransactionCrudService } from '../../../account/services/transaction/transaction-crud.service';
+import { Logger } from '../../../common/logger/logger';
 
 @singleton()
 export class PaymentService {
   constructor(
     @inject('Paystack') private readonly paystackService: IPaystackPaymentProvider,
-    private readonly transactionCrudService: TransactionCrudService
+    private readonly transactionCrudService: TransactionCrudService,
+    private readonly logger: Logger
   ) {}
 
   async verifyAccountDetailBeforeTransfer(accountNumber: string, bankCode: string) {
@@ -79,7 +81,7 @@ export class PaymentService {
       const transactionRecord = await this.transactionCrudService.findOne(options);
 
       if (!transactionRecord) {
-        console.error('Transaction not found:', reference);
+        this.logger.appLogger.warn(`Transaction not found, ref: ${reference}`);
         return { error: 'Transaction not found', code: HttpStatus.NOT_FOUND };
       }
 
@@ -91,7 +93,7 @@ export class PaymentService {
           TransactionStatus.FAILED,
           'Amount Mismatch'
         );
-        console.error('Amount Mismatch', reference);
+        this.logger.appLogger.warn(`Amount mismatch, ref: ${reference}`);
         return { error: 'Amount Mismatch', code: HttpStatus.BAD_REQUEST };
       }
 

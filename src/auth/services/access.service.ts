@@ -8,12 +8,14 @@ import { CommonUtils } from '../../utils/common.utils';
 import { SendEmailOtp } from './send-email-otp.service';
 import { v4 as uuidv4 } from 'uuid';
 import { EmailType } from '../../communication/email/enum/email.enum';
+import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class AccountAccessService {
   constructor(
     private readonly userService: UserService,
-    private readonly sendEmailOtp: SendEmailOtp
+    private readonly sendEmailOtp: SendEmailOtp,
+    private readonly logger: Logger
   ) {}
 
   async signin(signinPayload: { user: string; password: string }) {
@@ -26,7 +28,12 @@ export class AccountAccessService {
 
     const user = await this.userService.findUserByOptions(options);
 
-    if (!user) throw new AppError('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    if (!user) {
+      this.logger.appLogger.warn(
+        `Failed login attempt for user: ${usernameOrEmail}, Timestamp: ${new Date().toISOString()}, Reason: Invalid credentials`
+      );
+      throw new AppError('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
 
     if (!user.emailVerifiedAt) {
       const signupCacheKey = `user:signup:${user.id}`;
@@ -45,8 +52,12 @@ export class AccountAccessService {
       userPassword?.passwordHash as string
     );
 
-    if (!isPasswordMatch)
+    if (!isPasswordMatch) {
+      this.logger.appLogger.warn(
+        `Failed login attempt for user: ${usernameOrEmail}, Timestamp: ${new Date().toISOString()}, Reason: Invalid credentials`
+      );
       throw new AppError('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
 
     const payload = { id: user.id, tokenVersion: user.tokenVersion };
 
@@ -54,6 +65,9 @@ export class AccountAccessService {
 
     const { emailVerifiedAt, tokenVersion, ...remainingUserData } = user;
 
+    this.logger.appLogger.info(
+      `Successful login attempt for user: ${usernameOrEmail}. Timestamp: ${new Date().toISOString()}`
+    );
     return { user: remainingUserData, authToken };
   }
 
