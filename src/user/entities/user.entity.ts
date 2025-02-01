@@ -17,7 +17,7 @@ export class User extends AbstractEntity {
   @Column({ type: 'varchar', length: 255 })
   lastName: string;
 
-  @Column({ type: 'varchar', length: 20 })
+  @Column({ type: 'varchar', length: 20, unique: true })
   username: string;
 
   @Column({ type: 'varchar', length: 255, unique: true })
@@ -38,7 +38,7 @@ export class User extends AbstractEntity {
   @Column({ type: 'enum', enum: Role, default: Role.USER, select: false })
   role: Role;
 
-  @Column({ type: 'varchar', length: 300, select: false })
+  @Column({ type: 'varchar', length: 300 })
   address: string;
 
   @Column({ type: 'varchar', length: 50, select: false })

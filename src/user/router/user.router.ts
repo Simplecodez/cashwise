@@ -15,8 +15,19 @@ export class UserRouter {
 
   initialize() {
     this.router.use(this.protectMiddleware.protect());
-    this.router.get('/profile', this.userController.getMe());
-    this.router.patch('/kyc', this.userController.updateKyc());
+    this.router.get(
+      '/profile',
+      this.protectMiddleware.restrictTo('user'),
+      this.userController.getMe()
+    );
+    this.router.patch(
+      '/kyc',
+      this.protectMiddleware.restrictTo('user'),
+      this.userController.updateKyc()
+    );
+    this.router.use(this.protectMiddleware.restrictTo('admin', 'super_admin'));
+    this.router.get('/', this.userController.getAllUsers());
+    this.router.get('/:id', this.userController.getOneUser());
   }
 
   getRouter() {
