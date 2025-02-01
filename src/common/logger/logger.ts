@@ -41,7 +41,9 @@ export class Logger {
     return winston.format.combine(
       winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
       winston.format.colorize({ all: true }),
-      winston.format.printf((info) => `${info.timestamp} ${info.level}: ${info.message}`)
+      winston.format.printf(
+        (info) => `[${info.timestamp}] [${info.level}]: ${info.message}`
+      )
     );
   }
 
@@ -51,7 +53,7 @@ export class Logger {
 
   morganMiddleware() {
     this.configMorganTokens();
-    return morgan(':ip :method :url :status :res[content-length] - :response-time ms', {
+    return morgan('combined', {
       stream: {
         write: (message) => this.logger.http(message)
       },
