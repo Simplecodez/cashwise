@@ -15,9 +15,30 @@ export class AccountRouter {
 
   initialize() {
     this.router.use(this.protectMiddleware.protect());
+
+    this.router.get(
+      '/customers-accounts',
+      this.protectMiddleware.restrictTo('admin', 'super_admin'),
+      this.accountController.getAllAccounts()
+    );
+
+    this.router.post(
+      '/customers-accounts/freeze/:id',
+      this.protectMiddleware.restrictTo('super_admin'),
+      this.accountController.freezeAccount()
+    );
+
+    this.router.get(
+      '/customers-accounts/:id',
+      this.protectMiddleware.restrictTo('admin', 'super_admin'),
+      this.accountController.getOneAccount()
+    );
+
+    this.router.use(this.protectMiddleware.restrictTo('user'));
     this.router.post('/', this.accountController.createAccount());
-    this.router.get('/', this.accountController.getAllUserAccounts());
-    this.router.get('/:id', this.accountController.getUserAccount());
+    this.router.get('/user-accounts', this.accountController.getAllUserAccounts());
+    this.router.get('/user-accounts/:id', this.accountController.getUserAccount());
+    this.router.get('/confirm/:accountNumber', this.accountController.confirmAccount());
     this.router.get(
       '/:id/beneficiaries',
       this.accountController.getAccountBeneficiaries()
@@ -26,7 +47,6 @@ export class AccountRouter {
       '/:id/beneficiaries/:beneficiaryId',
       this.accountController.deleteAccountBeneficiary()
     );
-    this.router.get('/confirm/:accountNumber', this.accountController.confirmAccount());
   }
 
   getRouter() {

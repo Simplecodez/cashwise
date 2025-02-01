@@ -25,11 +25,11 @@ const accountCreationValidator = Joi.object({
   accountName: accountNameSchema
 });
 
-const uuidIdSchema = Joi.string()
+export const uuidIdSchema = Joi.string()
   .uuid({ version: ['uuidv4'] })
   .required();
 
-export const getAccountBeneficiaryValidator = Joi.object({
+export const getOneValidator = Joi.object({
   id: uuidIdSchema
 });
 

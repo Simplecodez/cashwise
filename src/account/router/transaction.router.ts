@@ -14,8 +14,15 @@ export class TransactionRouter {
     this.initialize();
   }
 
-  initialize() {
+  private initialize() {
     this.router.use(this.protectMiddleware.protect());
+
+    this.router.get(
+      '/',
+      this.protectMiddleware.restrictTo('admin', 'super_admin'),
+      this.transactionController.getAllTransactions()
+    );
+    this.router.use(this.protectMiddleware.restrictTo('user'));
     this.router.use(checkKycLevel());
     this.router.post('/initiate-deposit', this.transactionController.initiateDeposit());
     this.router.post(

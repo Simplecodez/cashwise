@@ -54,7 +54,8 @@ export class ProtectMiddleware {
         'username',
         'emailVerifiedAt',
         'phoneNumber',
-        'approvedKycLevel'
+        'approvedKycLevel',
+        'role'
       ]
     };
 
@@ -77,6 +78,16 @@ export class ProtectMiddleware {
       });
 
       (req as IRequest).user = authorisedUser;
+      (next as NextFunction)();
+    });
+  }
+
+  restrictTo(...roles: string[]) {
+    return catchAsync(async (req: Request | IRequest, res, next) => {
+      const userRole = (req as IRequest).user.role;
+      if (!roles.includes(userRole))
+        throw new AppError('Access forbidden', HttpStatus.FORBIDDEN);
+
       (next as NextFunction)();
     });
   }

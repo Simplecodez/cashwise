@@ -3,6 +3,14 @@ import { FindOneOptions, Repository } from 'typeorm';
 import { Account } from '../entities/account.entity';
 import { createHash, randomBytes } from 'crypto';
 import { ExternalRecipient } from '../entities/external-account.entity';
+import { Role } from '../../user/enum/user.enum';
+import { PaginationParams } from '../../common/pagination/pagination/pagination.args';
+import { formatDbQueryFilter, maskAccount, maskAccounts } from '../../utils/db.utils';
+import { FilterQueryBuilder } from '../../common/pagination/lib/query-builder/filter-query-builder';
+import { paginate } from '../../common/pagination/pagination/paginate';
+import { HttpStatus } from '../../common/http-codes/codes';
+import { AppError } from '../../utils/app-error.utils';
+import { AccountStatus } from '../enum/account.enum';
 
 @singleton()
 export class AccountService {
@@ -48,6 +56,47 @@ export class AccountService {
       balance: (account.balance / 100).toFixed(2)
     }));
     return accountWithAmountInHigherCurrency;
+  }
+
+  async findAllAccounts(
+    userRole: Role,
+    paginationParams: PaginationParams,
+    filterParams?: Record<string, string>
+  ) {
+    const columns: string[] = ['status', 'type', 'userId'];
+
+    const filtersExpression = formatDbQueryFilter(columns, filterParams);
+
+    const query = new FilterQueryBuilder(
+      this.accountRepository,
+      'Account',
+      filtersExpression
+    );
+
+    const result = await paginate(query.build(), paginationParams, 'createdAt');
+
+    if (userRole !== Role.SUPER_ADMIN) maskAccounts(result.data);
+
+    return result;
+  }
+
+  async findOneAccount(userRole: Role, accountId: string) {
+    const account = await this.findOne({ where: { id: accountId } });
+    if (!account) throw new AppError('Account not found', HttpStatus.BAD_REQUEST);
+
+    if (userRole !== Role.SUPER_ADMIN) maskAccount(account);
+
+    return account;
+  }
+
+  async freezeAccount(accountId: string) {
+    const updateResult = await this.accountRepository.update(
+      { id: accountId },
+      { status: AccountStatus.SUSPENDED }
+    );
+
+    if (!updateResult?.affected)
+      throw new AppError('Account not found', HttpStatus.NOT_FOUND);
   }
 
   private async generateAccountNumber(): Promise<string> {

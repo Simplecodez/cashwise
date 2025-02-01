@@ -12,5 +12,6 @@ export enum UserStatus {
 
 export enum Role {
   USER = 'user',
-  ADMIN = 'admin'
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin'
 }

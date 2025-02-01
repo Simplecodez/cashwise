@@ -7,8 +7,9 @@ import {
   accountCreateValidation,
   confirmAccountValidator,
   deleteAccountBeneficiaryValidator,
-  getAccountBeneficiaryValidator,
-  getOneUserAccountValidator
+  getOneUserAccountValidator,
+  getOneValidator,
+  uuidIdSchema
 } from '../validator/account.validator';
 import { CommonUtils } from '../../utils/common.utils';
 import { AccountJobType, AccountStatus, AccountType } from '../enum/account.enum';
@@ -18,7 +19,10 @@ import { FindOneOptions } from 'typeorm';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
 import { BeneficiaryService } from '../services/beneficiary.service';
-import { paginationValidator } from '../../common/pagination/pagination/validator';
+import {
+  paginationValidator,
+  validatePaginationParams
+} from '../../common/pagination/pagination/validator';
 import { PaginationParams } from '../../common/pagination/pagination/pagination.args';
 
 @singleton()
@@ -98,7 +102,7 @@ export class AccountController {
   getAccountBeneficiaries() {
     return catchAsync(async (req: IRequest | Request, res) => {
       await paginationValidator.validateAsync(req.query);
-      await getAccountBeneficiaryValidator.validateAsync(req.params);
+      await getOneValidator.validateAsync(req.params);
       const { id: accountId } = req.params;
       const { nextCursor, limit } = req.query;
       const { id: userId } = (req as IRequest).user;
@@ -120,13 +124,62 @@ export class AccountController {
     });
   }
 
+  getAllAccounts() {
+    return catchAsync(async (req: IRequest | Request, res) => {
+      const { paginationParams, parsedFilter } = await validatePaginationParams(
+        req.query as { limit: string; nextCursor?: string; filter?: string }
+      );
+      const userRole = (req as IRequest).user.role;
+      console.log(parsedFilter);
+      if (parsedFilter?.userId) await uuidIdSchema.validateAsync(parsedFilter.userId);
+
+      const accounts = await this.accountService.findAllAccounts(
+        userRole,
+        paginationParams,
+        parsedFilter
+      );
+
+      res.json({
+        status: 'success',
+        accounts
+      });
+    });
+  }
+
+  getOneAccount() {
+    return catchAsync(async (req: IRequest | Request, res) => {
+      await getOneValidator.validateAsync(req.params);
+      const userRole = (req as IRequest).user.role;
+      const { id: accountId } = req.params;
+      const account = await this.accountService.findOneAccount(userRole, accountId);
+
+      res.json({
+        status: 'success',
+        account
+      });
+    });
+  }
+
+  freezeAccount() {
+    return catchAsync(async (req: IRequest | Request, res) => {
+      await getOneValidator.validateAsync(req.params);
+      const { id: accountId } = req.params;
+      await this.accountService.freezeAccount(accountId);
+
+      res.json({
+        status: 'success',
+        message: 'Account freezed successfully'
+      });
+    });
+  }
+
   deleteAccountBeneficiary() {
     return catchAsync(async (req: IRequest | Request, res) => {
       await deleteAccountBeneficiaryValidator.validateAsync(req.params);
       const { id: userId } = (req as IRequest).user;
       const { id: accountId, beneficiaryId } = req.params;
       await this.beneficiaryService.delete(beneficiaryId, accountId, userId);
-      
+
       res.status(HttpStatus.NO_CONTENT).json({
         status: 'success'
       });

@@ -113,6 +113,10 @@ const sessionIdSchema = Joi.string()
 
 const otpSchema = Joi.string().length(6).required();
 
+export const getOneUserValidator = Joi.object({
+  id: sessionIdSchema
+});
+
 export const registrationDataValidator = Joi.object({
   userData: Joi.object({
     firstName: nameSchema,
