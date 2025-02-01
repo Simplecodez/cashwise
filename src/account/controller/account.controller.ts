@@ -130,7 +130,6 @@ export class AccountController {
         req.query as { limit: string; nextCursor?: string; filter?: string }
       );
       const userRole = (req as IRequest).user.role;
-      console.log(parsedFilter);
       if (parsedFilter?.userId) await uuidIdSchema.validateAsync(parsedFilter.userId);
 
       const accounts = await this.accountService.findAllAccounts(

@@ -19,7 +19,7 @@ import {
 import { Transaction } from '../../entities/transaction.entity';
 import { Account } from '../../entities/account.entity';
 import { AccountQueue } from '../../job-processor/account.queue';
-import { AccountJobType } from '../../enum/account.enum';
+import { AccountJobType, AccountStatus } from '../../enum/account.enum';
 import { ExternalRecipient } from '../../entities/external-account.entity';
 import { ExternalTransactionService } from './external-transaction.service';
 import { KycLevel } from '../../../user/enum/kyc.enum';
@@ -111,6 +111,18 @@ export class TransactionService {
     const senderAccount = await this.accountService.findOne(findSenderAccountOptions);
 
     if (!senderAccount) throw new AppError('Invalid account', HttpStatus.NOT_FOUND);
+
+    if (senderAccount.status === AccountStatus.SUSPENDED)
+      throw new AppError(
+        'Your account has been suspended. Please contact Customer Service for assistance.',
+        HttpStatus.FORBIDDEN
+      );
+
+    if (senderAccount.status === AccountStatus.LOCKED)
+      throw new AppError(
+        `Your account is currently locked and will be unlocked in approximately 23 hour(s)`,
+        HttpStatus.LOCKED
+      );
 
     if (requiredAvailableFunds > senderAccount.balance)
       throw new AppError('Insufficient balance', HttpStatus.UNPROCESSABLE_ENTITY);
