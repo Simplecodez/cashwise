@@ -40,7 +40,6 @@ export class AccountService {
   }
 
   async confirmAccount(accountNumber: string) {
-    console.log(accountNumber);
     return this.accountRepository
       .createQueryBuilder('account')
       .leftJoinAndSelect('account.user', 'user')

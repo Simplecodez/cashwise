@@ -18,7 +18,6 @@ export async function validatePaginationParams(queryString: {
 }) {
   await paginationValidator.validateAsync(queryString);
   const { limit, nextCursor, filter, reverse } = queryString;
-  console.log(reverse, 'reverse');
   // /users?filters=status=active,kyc=1
   const paginationParams: PaginationParams = {
     first: Number(limit),
