@@ -45,10 +45,12 @@
     "nodemailer": "^6.9.16",
     "otp-generator": "^4.0.1",
     "pg": "^8.13.1",
+    "pino": "^9.6.0",
     "pug": "^3.0.3",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.20",
     "typeorm-naming-strategies": "^4.1.0",
-    "uuid": "^11.0.3"
+    "uuid": "^11.0.3",
+    "winston": "^3.17.0"
   }
 }
