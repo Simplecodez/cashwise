@@ -1,3 +1,5 @@
+import { HttpStatus } from '../common/http-codes/codes';
+
 interface IAppError extends Error {
   message: string;
   statusCode: number;
@@ -7,13 +9,12 @@ interface IAppError extends Error {
   isOperational: boolean;
 }
 
-// Custom error class
 class AppError extends Error implements IAppError {
   public statusCode: number;
   public status: string;
   public isOperational: boolean;
 
-  constructor(message: string, statusCode: number) {
+  constructor(message: string, statusCode: HttpStatus) {
     super(message);
     this.statusCode = statusCode;
     this.status = this.getStatusLabel(statusCode);
