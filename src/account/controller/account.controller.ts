@@ -101,15 +101,14 @@ export class AccountController {
 
   getAccountBeneficiaries() {
     return catchAsync(async (req: IRequest | Request, res) => {
-      await paginationValidator.validateAsync(req.query);
       await getOneValidator.validateAsync(req.params);
+
+      const { paginationParams } = await validatePaginationParams(
+        req.query as { limit: string; nextCursor?: string; filter?: string }
+      );
+
       const { id: accountId } = req.params;
-      const { nextCursor, limit } = req.query;
       const { id: userId } = (req as IRequest).user;
-      const paginationParams: PaginationParams = {
-        first: Number(limit),
-        ...(nextCursor ? { after: nextCursor as string } : {})
-      };
 
       const beneficiaries = await this.beneficiaryService.getAccountBeneficiaries(
         userId,

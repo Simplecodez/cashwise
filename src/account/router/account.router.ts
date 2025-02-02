@@ -49,7 +49,7 @@ export class AccountRouter {
     );
   }
 
-  getRouter() {
+  get getRouter() {
     return this.router;
   }
 }
