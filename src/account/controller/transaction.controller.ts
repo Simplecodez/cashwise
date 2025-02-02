@@ -14,11 +14,7 @@ import { CommonUtils } from '../../utils/common.utils';
 import { InternalTransferData, TransactionJobType } from '../enum/transaction.enum';
 import { PaystackWebhookType } from '../../integrations/payments/enum/payment.enum';
 import { TransactionService } from '../services/transaction/transaction.service';
-import {
-  paginationValidator,
-  validatePaginationParams
-} from '../../common/pagination/pagination/validator';
-import { PaginationParams } from '../../common/pagination/pagination/pagination.args';
+import { validatePaginationParams } from '../../common/pagination/pagination/validator';
 
 @singleton()
 export class TransactionController {

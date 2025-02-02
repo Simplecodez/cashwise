@@ -37,5 +37,7 @@ export class ActivityService {
     );
 
     const result = await paginate(query.build(), paginationParams, 'createdAt');
+
+    return result;
   }
 }

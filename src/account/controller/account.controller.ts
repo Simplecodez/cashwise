@@ -19,11 +19,7 @@ import { FindOneOptions } from 'typeorm';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
 import { BeneficiaryService } from '../services/beneficiary.service';
-import {
-  paginationValidator,
-  validatePaginationParams
-} from '../../common/pagination/pagination/validator';
-import { PaginationParams } from '../../common/pagination/pagination/pagination.args';
+import { validatePaginationParams } from '../../common/pagination/pagination/validator';
 
 @singleton()
 export class AccountController {
