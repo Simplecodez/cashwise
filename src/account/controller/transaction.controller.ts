@@ -201,13 +201,11 @@ export class TransactionController {
 
   getAccountTransactions() {
     return catchAsync(async (req: IRequest | Request, res) => {
-      await paginationValidator.validateAsync(req.query);
-      const { nextCursor, limit } = req.query;
+      const { paginationParams } = await validatePaginationParams(
+        req.query as { limit: string; nextCursor?: string; filter?: string }
+      );
       const { id: userId } = (req as IRequest).user;
-      const paginationParams: PaginationParams = {
-        first: Number(limit),
-        ...(nextCursor ? { after: nextCursor as string } : {})
-      };
+
       await getAccountTransactionsValidator.validateAsync(req.params);
       const transactions = await this.transactionService.getAccountTransactions(
         userId,
