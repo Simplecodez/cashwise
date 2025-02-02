@@ -30,7 +30,7 @@ export class UserRouter {
     this.router.get('/:id', this.userController.getOneUser());
   }
 
-  getRouter() {
+  get getRouter() {
     return this.router;
   }
 }
