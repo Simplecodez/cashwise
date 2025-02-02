@@ -11,6 +11,7 @@ import { Paystack } from '../../integrations/payments/services/paystack.service'
 import { Transaction } from '../../account/entities/transaction.entity';
 import { ExternalRecipient } from '../../account/entities/external-account.entity';
 import { Beneficiary } from '../../account/entities/beneficiary.entity';
+import { Activity } from '../../activity/entity/activity.entity';
 
 const datasource = container.resolve(DatabaseConnection);
 
@@ -44,6 +45,10 @@ container.register<Repository<ExternalRecipient>>('ExternalRecipient', {
 
 container.register<Repository<Beneficiary>>('BeneficiaryRepository', {
   useFactory: () => datasource.getDataSource().getRepository(Beneficiary)
+});
+
+container.register<Repository<Activity>>('ActivityRepository', {
+  useFactory: () => datasource.getDataSource().getRepository(Activity)
 });
 
 container.register('BvnService', BvnService, { lifecycle: Lifecycle.Singleton });

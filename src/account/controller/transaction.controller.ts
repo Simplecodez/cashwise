@@ -14,15 +14,15 @@ import { CommonUtils } from '../../utils/common.utils';
 import { InternalTransferData, TransactionJobType } from '../enum/transaction.enum';
 import { PaystackWebhookType } from '../../integrations/payments/enum/payment.enum';
 import { TransactionService } from '../services/transaction/transaction.service';
-import {
-  paginationValidator,
-  validatePaginationParams
-} from '../../common/pagination/pagination/validator';
-import { PaginationParams } from '../../common/pagination/pagination/pagination.args';
+import { validatePaginationParams } from '../../common/pagination/pagination/validator';
+import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class TransactionController {
-  constructor(private readonly transactionService: TransactionService) {}
+  constructor(
+    private readonly transactionService: TransactionService,
+    private readonly logger: Logger
+  ) {}
 
   transferToInternalAccount() {
     return catchAsync(async (req: IRequest | Request, res) => {
@@ -189,8 +189,15 @@ export class TransactionController {
             }
 
             default:
-              console.log('Unsupported event type');
+              this.logger.appLogger.info(
+                `Unsupported webhook event, Timestamp: ${new Date().toISOString()}`
+              );
+              break;
           }
+      } else {
+        this.logger.appLogger.info(
+          `Invalid webhook signature, Timestamp: ${new Date().toISOString()}`
+        );
       }
 
       res.json({
@@ -201,13 +208,11 @@ export class TransactionController {
 
   getAccountTransactions() {
     return catchAsync(async (req: IRequest | Request, res) => {
-      await paginationValidator.validateAsync(req.query);
-      const { nextCursor, limit } = req.query;
+      const { paginationParams } = await validatePaginationParams(
+        req.query as { limit: string; nextCursor?: string; filter?: string }
+      );
       const { id: userId } = (req as IRequest).user;
-      const paginationParams: PaginationParams = {
-        first: Number(limit),
-        ...(nextCursor ? { after: nextCursor as string } : {})
-      };
+
       await getAccountTransactionsValidator.validateAsync(req.params);
       const transactions = await this.transactionService.getAccountTransactions(
         userId,

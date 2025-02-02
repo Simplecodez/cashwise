@@ -8,6 +8,8 @@ import { EmailType } from '../../communication/email/enum/email.enum';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
 import { Logger } from '../../common/logger/logger';
+import { ActivityQueue } from '../../activity/job-processor/activity.queue';
+import { ActivityJobType, ActivityType } from '../../activity/enum/activity.enum';
 
 @singleton()
 export class PasswordRecoveryService {
@@ -15,6 +17,7 @@ export class PasswordRecoveryService {
     private readonly userService: UserService,
     private readonly sendEmailOTPService: SendEmailOtp,
     private readonly cacheService: RedisCache,
+    private readonly activityQueue: ActivityQueue,
     private readonly logger: Logger
   ) {}
 
@@ -80,6 +83,16 @@ export class PasswordRecoveryService {
     await this.userService.updateUserPassword(user.id, password);
 
     await this.cacheService.del(cacheKey);
+
+    this.logger.appLogger.info(
+      `Successful password reset attempt for user: ${email}. Timestamp: ${new Date().toISOString()}`
+    );
+
+    this.activityQueue.addJob(ActivityJobType.CREATE, {
+      userId: user.id,
+      type: ActivityType.LOGOUT,
+      description: 'You reset your password'
+    });
 
     return 'Your password has been updated please sign in.';
   }

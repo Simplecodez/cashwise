@@ -16,7 +16,7 @@ export class PaystackWebhookRouter {
     );
   }
 
-  getRouter() {
+  get getRouter() {
     return this.router;
   }
 }

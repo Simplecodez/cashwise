@@ -30,7 +30,7 @@ export class AuthRouter {
     this.router.post('/reset-password', this.authController.resetPassword());
   }
 
-  getRouter() {
+  get getRouter() {
     return this.router;
   }
 }

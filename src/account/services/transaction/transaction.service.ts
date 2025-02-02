@@ -114,14 +114,14 @@ export class TransactionService {
 
     if (!senderAccount) {
       this.logger.appLogger.warn(
-        `Account not found: ID ${senderAccountId}, User ID ${userId}. Reason: Invalid account.`
+        `Account not found: User ID ${userId}. Reason: Invalid account. Timestamp: ${new Date().toISOString()}`
       );
       throw new AppError('Invalid account', HttpStatus.NOT_FOUND);
     }
 
     if (senderAccount.status === AccountStatus.SUSPENDED) {
       this.logger.appLogger.warn(
-        `Account with ID: ${senderAccountId} is suspended. User ID: ${userId}. Reason: Suspended account.`
+        `Account suspended. User ID: ${userId}. Timestamp: ${new Date().toISOString()}`
       );
       throw new AppError(
         'Your account has been suspended. Please contact Customer Service for assistance.',
@@ -131,8 +131,9 @@ export class TransactionService {
 
     if (senderAccount.status === AccountStatus.LOCKED) {
       this.logger.appLogger.warn(
-        `Account locked: ID ${senderAccountId}, User ID ${userId}. Expected unlock time: 23 hours.`
+        `Account locked, User ID ${userId}. Expected unlock time: 23 hours. Timestamp: ${new Date().toISOString()}`
       );
+
       throw new AppError(
         'Your account is currently locked and will be unlocked in approximately 23 hour(s)',
         HttpStatus.LOCKED
@@ -140,7 +141,7 @@ export class TransactionService {
     }
     if (requiredAvailableFunds > senderAccount.balance) {
       this.logger.appLogger.warn(
-        `Insufficient balance: Account ID ${senderAccountId}, User ID ${userId}. Amount: ${amountInLowerUnit}.`
+        `Insufficient balance, User ID ${userId}, Timestamp: ${new Date().toISOString()}`
       );
       throw new AppError('Insufficient balance', HttpStatus.UNPROCESSABLE_ENTITY);
     }
@@ -185,7 +186,14 @@ export class TransactionService {
         recipient_code
       } = recipient.data.data;
 
-      if (!active) throw new AppError('Invalid account number', HttpStatus.BAD_REQUEST);
+      if (!active) {
+        this.logger.appLogger.error(
+          `External transfer failed: Provider: ${
+            PaymentProvider.PAYSTACK
+          }, Reason: Inactive account number, Timestamp: ${new Date().toISOString()}`
+        );
+        throw new AppError('Invalid account number', HttpStatus.BAD_REQUEST);
+      }
 
       this.accountQueue.addJob(AccountJobType.EXTERNAL_ACCOUNT_CREATION, {
         accountName: account_name,
@@ -219,6 +227,13 @@ export class TransactionService {
     //   reference,
     //   remark
     // );
+
+    this.logger.appLogger.error(
+      `Successful external transfer initialization: Provider: ${
+        PaymentProvider.PAYSTACK
+      }, Timestamp: ${new Date().toISOString()}`
+    );
+
     return 'Transaction successful'; // returned for now, will bw removed once Paystack account is resolved
   }
 
@@ -252,7 +267,7 @@ export class TransactionService {
 
     if (!paymentResponse) {
       this.logger.appLogger.error(
-        `Payment initialization failed: Email: ${email}, Amount: ${amountInLowerunit}, Reference: ${reference}, Provider: ${provider}.`
+        `Payment initialization failed: Reference: ${reference}, Provider: ${provider}, Timestamp: ${new Date().toISOString()}.`
       );
       throw new AppError('Temporarily out of service', HttpStatus.BAD_GATEWAY);
     }
@@ -266,10 +281,19 @@ export class TransactionService {
     );
 
     await this.transactionCrudService.create(newTransactionRecord);
+
+    this.logger.appLogger.info(
+      `Payment initialization successful: Ref: ${reference}, Provider: ${provider} Timestamp: ${new Date().toISOString()}.`
+    );
     return paymentResponse.data;
   }
 
   addTransactionQueue(transactionJobType: TransactionJobType, data: any) {
+    this.logger.appLogger.info(
+      `Transaction job added: Ref: ${
+        data.reference
+      }, Type: ${transactionJobType}, Timestamp: ${new Date().toISOString()}`
+    );
     return this.transactionQueue.addJob(transactionJobType, data);
   }
 

@@ -46,7 +46,7 @@ export class TransactionRouter {
     );
   }
 
-  getRouter() {
+  get getRouter() {
     return this.router;
   }
 }

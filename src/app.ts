@@ -9,6 +9,7 @@ import { AccountRouter } from './account/router/account.router';
 import { TransactionRouter } from './account/router/transaction.router';
 import { PaystackWebhookRouter } from './integrations/payments/router/paystack-webhook.router';
 import { Logger } from './common/logger/logger';
+import { ActivityRouter } from './activity/router/activity.router';
 
 @singleton()
 export class App {
@@ -20,6 +21,7 @@ export class App {
     private readonly accountRouter: AccountRouter,
     private readonly transactionRouter: TransactionRouter,
     private readonly paystackWebhookRouter: PaystackWebhookRouter,
+    private readonly activityRouter: ActivityRouter,
     private readonly bullboardRouter: BullBoardRouter,
     private readonly logger: Logger
   ) {
@@ -39,12 +41,13 @@ export class App {
     this.app.get('/', (req, res) => {
       res.send('Welcome to Cashwise APIs');
     });
-    this.app.use('/api/v1/users', this.userRouter.getRouter());
-    this.app.use('/api/v1/auth', this.authRouter.getRouter());
-    this.app.use('/api/v1/accounts', this.accountRouter.getRouter());
-    this.app.use('/paystack', this.paystackWebhookRouter.getRouter());
-    this.app.use('/api/v1/transactions', this.transactionRouter.getRouter());
-    this.app.use('/admin/queues', this.bullboardRouter.getRouter());
+    this.app.use('/api/v1/users', this.userRouter.getRouter);
+    this.app.use('/api/v1/auth', this.authRouter.getRouter);
+    this.app.use('/api/v1/activities', this.activityRouter.getRouter);
+    this.app.use('/api/v1/accounts', this.accountRouter.getRouter);
+    this.app.use('/paystack', this.paystackWebhookRouter.getRouter);
+    this.app.use('/api/v1/transactions', this.transactionRouter.getRouter);
+    this.app.use('/admin/queues', this.bullboardRouter.getRouter);
   }
 
   private initializeGlobalRouteHandling() {
