@@ -9,12 +9,15 @@ import { SendEmailOtp } from './send-email-otp.service';
 import { v4 as uuidv4 } from 'uuid';
 import { EmailType } from '../../communication/email/enum/email.enum';
 import { Logger } from '../../common/logger/logger';
+import { ActivityQueue } from '../../activity/job-processor/activity.queue';
+import { ActivityJobType, ActivityType } from '../../activity/enum/activity.enum';
 
 @singleton()
 export class AccountAccessService {
   constructor(
     private readonly userService: UserService,
     private readonly sendEmailOtp: SendEmailOtp,
+    private readonly activityQueue: ActivityQueue,
     private readonly logger: Logger
   ) {}
 
@@ -68,6 +71,11 @@ export class AccountAccessService {
     this.logger.appLogger.info(
       `Successful login attempt for user: ${usernameOrEmail}. Timestamp: ${new Date().toISOString()}`
     );
+    this.activityQueue.addJob(ActivityJobType.CREATE, {
+      userId: user.id,
+      type: ActivityType.LOGIN,
+      description: 'You logged in'
+    });
     return { user: remainingUserData, authToken };
   }
 
@@ -85,7 +93,11 @@ export class AccountAccessService {
       { field: 'id', value: userId },
       { tokenVersion: uuidv4() }
     );
-
+    this.activityQueue.addJob(ActivityJobType.CREATE, {
+      userId: user.id,
+      type: ActivityType.LOGOUT,
+      description: 'You logged out'
+    });
     return 'Signed out successfully';
   }
 }
