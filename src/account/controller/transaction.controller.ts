@@ -15,10 +15,14 @@ import { InternalTransferData, TransactionJobType } from '../enum/transaction.en
 import { PaystackWebhookType } from '../../integrations/payments/enum/payment.enum';
 import { TransactionService } from '../services/transaction/transaction.service';
 import { validatePaginationParams } from '../../common/pagination/pagination/validator';
+import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class TransactionController {
-  constructor(private readonly transactionService: TransactionService) {}
+  constructor(
+    private readonly transactionService: TransactionService,
+    private readonly logger: Logger
+  ) {}
 
   transferToInternalAccount() {
     return catchAsync(async (req: IRequest | Request, res) => {
@@ -185,8 +189,15 @@ export class TransactionController {
             }
 
             default:
-              console.log('Unsupported event type');
+              this.logger.appLogger.info(
+                `Unsupported webhook event, Timestamp: ${new Date().toISOString()}`
+              );
+              break;
           }
+      } else {
+        this.logger.appLogger.info(
+          `Invalid webhook signature, Timestamp: ${new Date().toISOString()}`
+        );
       }
 
       res.json({
