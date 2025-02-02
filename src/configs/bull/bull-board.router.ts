@@ -8,6 +8,7 @@ import { KycQueue } from '../../user/job-processors/kyc.queue';
 import { AccountQueue } from '../../account/job-processor/account.queue';
 import { TransactionQueue } from '../../account/job-processor/transaction.queue';
 import { BeneficiaryQueue } from '../../account/job-processor/beneficiary.queue';
+import { ActivityQueue } from '../../activity/job-processor/activity.queue';
 
 @singleton()
 export class BullBoardRouter {
@@ -20,7 +21,8 @@ export class BullBoardRouter {
     private readonly kycQueue: KycQueue,
     private readonly accountQueue: AccountQueue,
     private readonly transactionQueue: TransactionQueue,
-    private readonly beneficiaryQueue: BeneficiaryQueue
+    private readonly beneficiaryQueue: BeneficiaryQueue,
+    private readonly activityQueue: ActivityQueue
   ) {
     this.serverAdapter = new ExpressAdapter();
     this.queues = [
@@ -28,7 +30,8 @@ export class BullBoardRouter {
       this.kycQueue.getQueue(),
       this.accountQueue.getQueue(),
       this.transactionQueue.getQueue(),
-      this.beneficiaryQueue.getQueue()
+      this.beneficiaryQueue.getQueue(),
+      this.activityQueue.getQueue()
     ];
     this.queueList = this.queues.map((queue) => new BullAdapter(queue));
     createBullBoard({
@@ -38,7 +41,7 @@ export class BullBoardRouter {
     this.serverAdapter.setBasePath('/admin/queues');
   }
 
-  public getRouter() {
+  get getRouter() {
     return this.serverAdapter.getRouter();
   }
 }
