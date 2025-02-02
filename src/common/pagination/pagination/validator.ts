@@ -21,7 +21,7 @@ export async function validatePaginationParams(queryString: {
   // /users?filters=status=active,kyc=1
   const paginationParams: PaginationParams = {
     first: Number(limit),
-    reverse: reverse === 'true' || reverse === 'yes' ? true : false,
+    reverse: ['true', 'yes'].includes(reverse ?? 'true'),
     ...(nextCursor ? { after: nextCursor } : {})
   };
 
