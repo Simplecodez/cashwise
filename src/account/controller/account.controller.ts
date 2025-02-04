@@ -1,4 +1,5 @@
 import { singleton } from 'tsyringe';
+import { generate } from 'generate-passphrase';
 import { catchAsync } from '../../utils/catch-async.utils';
 import { IRequest } from '../../user/interfaces/user.interface';
 import { Request } from 'express';
@@ -13,20 +14,20 @@ import {
 } from '../validator/account.validator';
 import { CommonUtils } from '../../utils/common.utils';
 import { AccountJobType, AccountStatus, AccountType } from '../enum/account.enum';
-import { AccountQueue } from '../job-processor/account.queue';
 import { AccountService } from '../services/account.service';
 import { FindOneOptions } from 'typeorm';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
 import { BeneficiaryService } from '../services/beneficiary.service';
 import { validatePaginationParams } from '../../common/pagination/pagination/validator';
+import { AccountQueue } from '../job-processor/account.queue';
 
 @singleton()
 export class AccountController {
   constructor(
-    private readonly accountQueue: AccountQueue,
     private readonly accountService: AccountService,
-    private readonly beneficiaryService: BeneficiaryService
+    private readonly beneficiaryService: BeneficiaryService,
+    private readonly accountQueue: AccountQueue
   ) {}
 
   createAccount() {
@@ -37,12 +38,16 @@ export class AccountController {
         firstName,
         lastName
       } = (req as IRequest).user;
+
+      const passPhrase = generate({ fast: true, length: 5 });
       await accountCreateValidation(req.body, approvedKycLevel);
 
       const accountCreationData: Partial<Account> = {
         userId,
         name: req.body?.accountName || CommonUtils.generateRandomAccountName(),
         balance: 0,
+        passcode: req.body.passcode,
+        passPhrase,
         username: `${firstName} ${lastName}`,
         type: AccountType.SAVINGS,
         status: AccountStatus.ACTIVE
