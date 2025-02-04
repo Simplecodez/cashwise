@@ -6,7 +6,8 @@ import {
   internalTransferValidator,
   verifyExternalAccountValidator,
   getAccountTransactionValidator,
-  getAccountTransactionsValidator
+  getAccountTransactionsValidator,
+  completeTransferValidator
 } from '../validator/transaction.validator';
 import { IRequest } from '../../user/interfaces/user.interface';
 import { Request } from 'express';
@@ -24,12 +25,33 @@ export class TransactionController {
     private readonly logger: Logger
   ) {}
 
-  transferToInternalAccount() {
+  completeTransfer() {
+    return catchAsync(async (req: IRequest | Request, res) => {
+      await completeTransferValidator.validateAsync({ ...req.body, ...req.params });
+      const { id: transactionKey } = req.params;
+      const { passcode, passphrase } = req.body;
+      let passcodeOrPassphrase = passcode;
+
+      if (!passcodeOrPassphrase) passcodeOrPassphrase = passphrase;
+
+      const message = await this.transactionService.completeTransfer(
+        transactionKey,
+        passcodeOrPassphrase
+      );
+
+      res.json({
+        status: 'success',
+        message
+      });
+    });
+  }
+
+  initializeTransferToInternalAccount() {
     return catchAsync(async (req: IRequest | Request, res) => {
       await internalTransferValidator.validateAsync(req.body, { convert: false });
       const { id: userId, approvedKycLevel } = (req as IRequest).user;
 
-      const { receiverAccountNumber, senderAccountId, amount } =
+      const { receiverAccountNumber, senderAccountId, amount, remark } =
         req.body as InternalTransferData;
 
       const { receiverAccountId, amountInLowerUnit, receiverName } =
@@ -40,28 +62,23 @@ export class TransactionController {
           amount
         );
 
-      await this.transactionService.checkTransactionLimit(
+      const receiverDetails = {
+        receiverName,
+        accountNumber: receiverAccountNumber,
+        accountId: receiverAccountId
+      };
+
+      const checkResult = await this.transactionService.checkTransaction(
+        userId,
         senderAccountId,
+        receiverDetails,
         amount,
-        approvedKycLevel
-      );
-
-      this.transactionService.initializeInternalTransfer(
+        approvedKycLevel,
         TransactionJobType.INTERNAL_TRANSFER,
-        {
-          ...req.body,
-          userId,
-          amount: amountInLowerUnit,
-          receiverAccountId,
-          receiverAccountNumber,
-          receiverName
-        }
+        remark
       );
 
-      res.json({
-        status: 'success',
-        message: `${amount} is on it's way to ${receiverAccountNumber}`
-      });
+      res.json(checkResult);
     });
   }
 
@@ -125,26 +142,29 @@ export class TransactionController {
           senderAccountId,
           userId
         );
+      const verificationResult =
+        await this.transactionService.verifyExternalAccountBeforeTransfer(
+          accountNumber,
+          bankCode
+        );
 
-      await this.transactionService.checkTransactionLimit(
-        senderAccountId,
-        amount,
-        approvedKycLevel
-      );
-
-      const message = await this.transactionService.initiateExternalTransfer(
-        senderAccountId,
-        customerName,
+      const receiverDetails = {
+        receiverName: verificationResult.data.data.account_name,
         accountNumber,
-        bankCode,
+        bankCode
+      };
+
+      const checkResult = await this.transactionService.checkTransaction(
+        userId,
+        senderAccountId,
+        receiverDetails,
         amountInLowerUnit,
+        approvedKycLevel,
+        TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK,
         remark
       );
 
-      res.json({
-        status: 'success',
-        message
-      });
+      res.json(checkResult);
     });
   }
 

@@ -9,12 +9,14 @@ import { PaymentProvider } from '../../../integrations/payments/enum/payment.enu
 import { HttpStatus } from '../../../common/http-codes/codes';
 import { AppError } from '../../../utils/app-error.utils';
 import {
+  TransactionFlag,
   TransactionGateway,
   TransactionJobType,
   transactionLimit,
   TransactionOrigin,
   TransactionStatus,
-  TransactionType
+  TransactionType,
+  TransferData
 } from '../../enum/transaction.enum';
 import { Transaction } from '../../entities/transaction.entity';
 import { Account } from '../../entities/account.entity';
@@ -26,10 +28,13 @@ import { KycLevel } from '../../../user/enum/kyc.enum';
 import { PaginationParams } from '../../../common/pagination/pagination/pagination.args';
 import { Role } from '../../../user/enum/user.enum';
 import { Logger } from '../../../common/logger/logger';
+import { RedisCache } from '../../../configs/redis/redis.service';
+import { CommonUtils } from '../../../utils/common.utils';
 
 @singleton()
 export class TransactionService {
   private readonly minimumAccountBalanceAfterTransactionInLowerUnit = 10000;
+  private readonly TRANSACTION_FLAG_THRESHOLD = 0.4;
 
   constructor(
     private readonly paymentService: PaymentService,
@@ -38,30 +43,149 @@ export class TransactionService {
     private readonly transactionQueue: TransactionQueue,
     private readonly accountQueue: AccountQueue,
     private readonly externalTransactionService: ExternalTransactionService,
+    private readonly cacheService: RedisCache,
     private readonly logger: Logger
   ) {}
 
-  async checkTransactionLimit(
-    senderAccountId: string,
-    amount: number,
-    approvedKycLevel: KycLevel
-  ) {
-    if (approvedKycLevel === KycLevel.LEVEL_3) return;
-    const dailyLimit = transactionLimit[approvedKycLevel];
-    const amountInLowerUnit = amount * 100;
+  async completeTransfer(transactionKey: string, passcodeOrPassphrase: string) {
+    const transferData: TransferData = await this.cacheService.get(transactionKey);
+    let isVerified = false;
 
-    const dailyTotal =
-      await this.transactionCrudService.calculateDailyTotalSuccessTransfer(
-        senderAccountId
+    if (!transferData) {
+      this.logger.appLogger.debug(
+        `Invalid transaction key: Timestamp: ${new Date().toISOString()}`
       );
+      throw new AppError('Invalid transaction key', HttpStatus.BAD_REQUEST);
+    }
 
-    if (dailyTotal + amountInLowerUnit >= dailyLimit) {
+    if (transferData.transactionStatus === TransactionStatus.SUCCESS) {
+      this.logger.appLogger.debug(
+        `Duplicate transaction: Timestamp: ${new Date().toISOString()}`
+      );
       throw new AppError(
-        'Daily transaction limit reached. Upgrade your KYC level to increase your limit',
+        'Duplicate transaction, please try again later',
         HttpStatus.BAD_REQUEST
       );
     }
-    return;
+
+    const account = await this.accountService.findOne({
+      where: { id: transferData.senderAccountId },
+      select: ['passPhrase', 'passcode']
+    });
+
+    if (transferData.transactionFlag === TransactionFlag.NORMAL) {
+      isVerified = await CommonUtils.verifyPassword(
+        passcodeOrPassphrase,
+        account?.passcode as string
+      );
+    } else if (transferData.transactionFlag === TransactionFlag.LARGE_AMOUNT) {
+      isVerified = await CommonUtils.verifyPassword(
+        passcodeOrPassphrase,
+        account?.passPhrase as string
+      );
+    }
+
+    if (!isVerified)
+      throw new AppError('Incorrect pin or passphrase', HttpStatus.UNAUTHORIZED);
+
+    if (transferData.transactionJobType === TransactionJobType.INTERNAL_TRANSFER)
+      this.initializeInternalTransfer(TransactionJobType.INTERNAL_TRANSFER, {
+        userId: transferData.senderId,
+        senderAccountId: transferData.senderAccountId,
+        receiverAccountNumber: transferData.receiverDetails.accountNumber,
+        receiverAccountId: transferData.receiverDetails.accountId,
+        amount: transferData.amountInLowerUnit,
+        receiverName: transferData.receiverDetails.receiverName
+      });
+
+    if (transferData.transactionJobType === TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK)
+      await this.initiateExternalTransfer(
+        transferData.senderAccountId,
+        transferData.receiverDetails.receiverName,
+        transferData.receiverDetails.accountNumber,
+        transferData.receiverDetails.bankCode as string,
+        transferData.amountInLowerUnit,
+        transferData.remark
+      );
+
+    const formattedCurrency = new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN'
+    }).format(transferData.amountInLowerUnit / 100);
+
+    await this.cacheService.set(
+      transactionKey,
+      {
+        ...transferData,
+        transactionStatus: TransactionStatus.SUCCESS
+      },
+      30
+    );
+
+    return `Success! ${formattedCurrency} is on its way to ${transferData.receiverDetails.receiverName}-(${transferData.receiverDetails.accountNumber})`;
+  }
+
+  async checkTransaction(
+    userId: string,
+    senderAccountId: string,
+    receiverDetails: {
+      customerName?: string;
+      accountNumber: string;
+      accountId?: string;
+      bankCode?: string;
+    },
+    amount: number,
+    approvedKycLevel: KycLevel,
+    transactionJobType: TransactionJobType,
+    remark?: string
+  ) {
+    const dailyLimit = transactionLimit[approvedKycLevel];
+    const amountInLowerUnit = Number(amount) * 100;
+
+    if (approvedKycLevel !== KycLevel.LEVEL_3) {
+      const dailyTotal =
+        await this.transactionCrudService.calculateDailyTotalSuccessTransfer(
+          senderAccountId
+        );
+
+      if (dailyTotal + amountInLowerUnit >= dailyLimit) {
+        throw new AppError(
+          'Daily transaction limit reached. Upgrade your KYC level to increase your limit',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+    }
+
+    let cacheKey = `txn-${uuidv4().replace(/-/g, '')}`;
+    let authMethod = 'PIN';
+    let transactionFlag = TransactionFlag.NORMAL;
+
+    if (amountInLowerUnit >= dailyLimit * this.TRANSACTION_FLAG_THRESHOLD) {
+      authMethod = 'PASSPHRASE';
+      transactionFlag = TransactionFlag.LARGE_AMOUNT;
+    }
+
+    await this.cacheService.set(
+      cacheKey,
+      {
+        senderId: userId,
+        senderAccountId,
+        receiverDetails,
+        amountInLowerUnit,
+        transactionJobType,
+        transactionFlag,
+        transactionStatus: TransactionStatus.PENDING,
+        remark
+      },
+      300
+    );
+
+    return {
+      status: 'pending_auth',
+      message: 'Further authentication required.',
+      authMethod,
+      auth_key: cacheKey
+    };
   }
 
   async validateInternalTransferDetail(
@@ -288,12 +412,7 @@ export class TransactionService {
     return paymentResponse.data;
   }
 
-  addTransactionQueue(transactionJobType: TransactionJobType, data: any) {
-    this.logger.appLogger.info(
-      `Transaction job added: Ref: ${
-        data.reference
-      }, Type: ${transactionJobType}, Timestamp: ${new Date().toISOString()}`
-    );
+  async addTransactionQueue(transactionJobType: TransactionJobType, data: any) {
     return this.transactionQueue.addJob(transactionJobType, data);
   }
 

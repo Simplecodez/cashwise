@@ -36,9 +36,13 @@ export class TransactionRouter {
     );
     this.router.post(
       '/initiate-internal-transfer',
-      this.transactionController.transferToInternalAccount()
+      this.transactionController.initializeTransferToInternalAccount()
     );
 
+    this.router.post(
+      '/complete-transfer/:id',
+      this.transactionController.completeTransfer()
+    );
     this.router.get('/account/:id', this.transactionController.getAccountTransactions());
     this.router.get(
       '/account/:id/:reference',

@@ -6,6 +6,13 @@ export enum TransactionType {
   REFUND = 'REFUND'
 }
 
+export enum TransactionFlag {
+  NORMAL = 'NORMAL',
+  LARGE_AMOUNT = 'LARGE_AMOUNT',
+  UNUSUAL_PATTERN = 'UNUSUAL_PATTERN',
+  FREQUENT_TRANSACTIONS = 'FREQUENT_TRANSACTIONS',
+  NEW_BENEFICIARY = 'NEW_BENEFICIARY'
+}
 
 export enum TransactionStatus {
   SUCCESS = 'success',
@@ -34,9 +41,25 @@ export enum TransactionJobType {
 
 export const transactionLimit: { [key in KycLevel]: number } = {
   level_0: 0,
-  level_1: 3000000,
-  level_2: 15000000,
-  level_3: Infinity
+  level_1: 3_000_000,
+  level_2: 15_000_000,
+  level_3: 100_000_000
+};
+
+export type TransferData = {
+  senderId: string;
+  senderAccountId: string;
+  receiverDetails: {
+    receiverName: string;
+    accountNumber: string;
+    accountId?: string;
+    bankCode?: string;
+  };
+  amountInLowerUnit: number;
+  transactionJobType: TransactionJobType;
+  transactionFlag: TransactionFlag;
+  transactionStatus: TransactionStatus
+  remark: string;
 };
 
 export type TransactionDepositData = {
@@ -55,6 +78,7 @@ export type InternalTransferData = {
   senderAccountId: string;
   amount: number;
   receiverAccountNumber: string;
+  remark?: string;
 };
 
 export type TransferSessionData = {
