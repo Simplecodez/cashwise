@@ -1,4 +1,5 @@
 import { Job } from 'bullmq';
+import { generate } from 'generate-passphrase';
 import { KycJobType, KycLevel, KycStatus } from '../enum/kyc.enum';
 import { inject, singleton } from 'tsyringe';
 import { IKycUpdate } from '../interfaces/kyc.interface';
@@ -13,13 +14,15 @@ import {
 } from '../../account/enum/account.enum';
 import { CommonUtils } from '../../utils/common.utils';
 import { Account } from '../../account/entities/account.entity';
+import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class KycProcessor {
   constructor(
     @inject('BvnService') private readonly bvnService: IBvnService,
     private readonly kycCrudService: KycCrudService,
-    private readonly accountQueue: AccountQueue
+    private readonly accountQueue: AccountQueue,
+    private readonly logger: Logger
   ) {}
   async process(job: Job<IKycUpdate>): Promise<void> {
     try {
@@ -43,14 +46,26 @@ export class KycProcessor {
               levelOneVerifiedAt: new Date()
             });
 
+            const passcode = CommonUtils.generateOtp({
+              size: 4,
+              digit: true,
+              upper: false,
+              lower: false
+            });
+
+            const passPhrase = generate({ fast: true, length: 5 });
+
             const accountCreationData: Partial<Account> = {
               userId,
               name: CommonUtils.generateRandomAccountName(),
               balance: 0,
+              passcode,
+              passPhrase,
               username,
               type: AccountType.SAVINGS,
               status: AccountStatus.ACTIVE
             };
+
             this.accountQueue.addJob(AccountJobType.CREATION, accountCreationData);
           } else {
             await this.kycCrudService.update(userId, {
@@ -89,8 +104,11 @@ export class KycProcessor {
         default:
           break;
       }
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      this.logger.appLogger.error(
+        `${error.message}, Timestamp: ${new Date().toISOString()}`,
+        error.stack
+      );
       throw error;
     }
   }
