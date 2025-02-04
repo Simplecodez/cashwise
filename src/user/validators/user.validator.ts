@@ -35,15 +35,12 @@ const emailSchema = Joi.string()
   .required();
 
 const phoneNumberSchema = Joi.string()
-  .min(10)
-  .message(
-    'Phone number must be exactly 10 digits. Please exclude the country code and leading zero'
-  )
-  .max(10)
-  .message(
-    'Phone number must be exactly 10 digits. Please exclude the country code and leading zero'
-  )
-  .required();
+  .pattern(/^\d{10}$/)
+  .required()
+  .messages({
+    'string.pattern.base': 'Phone number must be a 10-digit number',
+    'any.invalid': 'Invalid phone number'
+  });
 
 const countryCodeSchema = Joi.valid('NG').required();
 
