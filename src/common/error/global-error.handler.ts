@@ -14,7 +14,7 @@ export class GlobalErrorHandler {
   }
 
   static handleDuplicateDB(err: any): AppError {
-    let message: string = 'Email or phone number already exist';
+    let message: string = 'Email or username already exist';
     return new AppError(message, 400);
   }
 
