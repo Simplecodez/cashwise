@@ -38,6 +38,8 @@ export class RegisterService {
       data.countryCode
     ) as string;
 
+    if (!phoneNumber) throw new AppError('Invalid phone number', HttpStatus.BAD_REQUEST);
+
     const sessionData: UserVerificationData = {
       phoneNumber,
       countryCode: data.countryCode.toUpperCase(),
