@@ -20,24 +20,18 @@ import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class TransactionController {
-  constructor(
-    private readonly transactionService: TransactionService,
-    private readonly logger: Logger
-  ) {}
+  constructor(private readonly transactionService: TransactionService, private readonly logger: Logger) {}
 
   completeTransfer() {
     return catchAsync(async (req: IRequest | Request, res) => {
       await completeTransferValidator.validateAsync({ ...req.body, ...req.params });
       const { id: transactionKey } = req.params;
-      const { passcode, passphrase } = req.body;
+      const { passcode, passphrase } = req.body as Record<string, string>;
       let passcodeOrPassphrase = passcode;
 
       if (!passcodeOrPassphrase) passcodeOrPassphrase = passphrase;
 
-      const message = await this.transactionService.completeTransfer(
-        transactionKey,
-        passcodeOrPassphrase
-      );
+      const message = await this.transactionService.completeTransfer(transactionKey, passcodeOrPassphrase);
 
       res.json({
         status: 'success',
@@ -46,39 +40,24 @@ export class TransactionController {
     });
   }
 
-  initializeTransferToInternalAccount() {
+  initiateInternalTransfer() {
     return catchAsync(async (req: IRequest | Request, res) => {
       await internalTransferValidator.validateAsync(req.body, { convert: false });
       const { id: userId, approvedKycLevel } = (req as IRequest).user;
 
-      const { receiverAccountNumber, senderAccountId, amount, remark } =
-        req.body as InternalTransferData;
+      const { receiverAccountNumber, senderAccountId, amount, remark } = req.body as InternalTransferData;
 
-      const { receiverAccountId, amountInLowerUnit, receiverName } =
-        await this.transactionService.validateInternalTransferDetail(
-          senderAccountId,
-          receiverAccountNumber,
-          userId,
-          amount
-        );
-
-      const receiverDetails = {
-        receiverName,
-        accountNumber: receiverAccountNumber,
-        accountId: receiverAccountId
-      };
-
-      const checkResult = await this.transactionService.checkTransaction(
-        userId,
+      const validationResult = await this.transactionService.validateInternalTransferDetails(
         senderAccountId,
-        receiverDetails,
-        amount,
+        receiverAccountNumber,
+        userId,
         approvedKycLevel,
         TransactionJobType.INTERNAL_TRANSFER,
+        amount,
         remark
       );
 
-      res.json(checkResult);
+      res.json(validationResult);
     });
   }
 
@@ -109,10 +88,7 @@ export class TransactionController {
         accountNumber: string;
         bankCode: string;
       };
-      const result = await this.transactionService.verifyExternalAccountBeforeTransfer(
-        accountNumber,
-        bankCode
-      );
+      const result = await this.transactionService.verifyExternalAccount(accountNumber, bankCode);
 
       res.json({
         status: 'success',
@@ -126,45 +102,25 @@ export class TransactionController {
       await initiateExternalTransferValidator.validateAsync(req.body);
 
       const { id: userId, approvedKycLevel } = (req as IRequest).user;
-      const { customerName, accountNumber, bankCode, senderAccountId, amount, remark } =
-        req.body as {
-          customerName: string;
-          amount: number;
-          accountNumber: string;
-          senderAccountId: string;
-          bankCode: string;
-          remark: string;
-        };
-
-      const amountInLowerUnit =
-        await this.transactionService.validateSenderAccountandAmount(
-          amount,
-          senderAccountId,
-          userId
-        );
-      const verificationResult =
-        await this.transactionService.verifyExternalAccountBeforeTransfer(
-          accountNumber,
-          bankCode
-        );
-
-      const receiverDetails = {
-        receiverName: verificationResult.data.data.account_name,
-        accountNumber,
-        bankCode
+      const { accountNumber, bankCode, senderAccountId, amount, remark } = req.body as {
+        amount: number;
+        accountNumber: string;
+        senderAccountId: string;
+        bankCode: string;
+        remark: string;
       };
 
-      const checkResult = await this.transactionService.checkTransaction(
+      const validationResult = await this.transactionService.validateExternalTransferDetails(
         userId,
-        senderAccountId,
-        receiverDetails,
-        amountInLowerUnit,
         approvedKycLevel,
-        TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK,
+        senderAccountId,
+        accountNumber,
+        amount,
+        bankCode,
         remark
       );
 
-      res.json(checkResult);
+      res.json(validationResult);
     });
   }
 
@@ -181,14 +137,11 @@ export class TransactionController {
               const { status, reference, amount } = data;
 
               if (status && reference && amount)
-                this.transactionService.addTransactionQueue(
-                  TransactionJobType.DEPOSIT_PAYSTACK,
-                  {
-                    status,
-                    reference,
-                    amount
-                  }
-                );
+                this.transactionService.addTransactionQueue(TransactionJobType.DEPOSIT_PAYSTACK, {
+                  status,
+                  reference,
+                  amount
+                });
               break;
             }
             case 'transfer.success':
@@ -197,27 +150,20 @@ export class TransactionController {
               const { status, reference, amount, session } = data;
 
               if (status && reference && amount)
-                this.transactionService.addTransactionQueue(
-                  TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK,
-                  {
-                    status,
-                    reference,
-                    amount,
-                    session
-                  }
-                );
+                this.transactionService.addTransactionQueue(TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK, {
+                  status,
+                  reference,
+                  amount,
+                  session
+                });
             }
 
             default:
-              this.logger.appLogger.info(
-                `Unsupported webhook event, Timestamp: ${new Date().toISOString()}`
-              );
+              this.logger.appLogger.info(`Unsupported webhook event, Timestamp: ${new Date().toISOString()}`);
               break;
           }
       } else {
-        this.logger.appLogger.info(
-          `Invalid webhook signature, Timestamp: ${new Date().toISOString()}`
-        );
+        this.logger.appLogger.info(`Invalid webhook signature, Timestamp: ${new Date().toISOString()}`);
       }
 
       res.json({
@@ -252,11 +198,7 @@ export class TransactionController {
       const { id: userId } = (req as IRequest).user;
       await getAccountTransactionValidator.validateAsync(req.params);
       const { id: accoundId, reference } = req.params;
-      const transaction = await this.transactionService.getAccountTransaction(
-        userId,
-        accoundId,
-        reference
-      );
+      const transaction = await this.transactionService.getAccountTransaction(userId, accoundId, reference);
       res.json({
         status: 'success',
         transaction

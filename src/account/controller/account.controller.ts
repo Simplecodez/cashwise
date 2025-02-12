@@ -14,7 +14,7 @@ import {
 } from '../validator/account.validator';
 import { CommonUtils } from '../../utils/common.utils';
 import { AccountJobType, AccountStatus, AccountType } from '../enum/account.enum';
-import { AccountService } from '../services/account.service';
+import { AccountService } from '../services/account/account.service';
 import { FindOneOptions } from 'typeorm';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
@@ -32,12 +32,7 @@ export class AccountController {
 
   createAccount() {
     return catchAsync(async (req: IRequest | Request, res) => {
-      const {
-        id: userId,
-        approvedKycLevel,
-        firstName,
-        lastName
-      } = (req as IRequest).user;
+      const { id: userId, approvedKycLevel, firstName, lastName } = (req as IRequest).user;
 
       const passPhrase = generate({ fast: true, length: 5 });
       await accountCreateValidation(req.body, approvedKycLevel);
@@ -132,11 +127,7 @@ export class AccountController {
       const userRole = (req as IRequest).user.role;
       if (parsedFilter?.userId) await uuidIdSchema.validateAsync(parsedFilter.userId);
 
-      const accounts = await this.accountService.findAllAccounts(
-        userRole,
-        paginationParams,
-        parsedFilter
-      );
+      const accounts = await this.accountService.findAllAccounts(userRole, paginationParams, parsedFilter);
 
       res.json({
         status: 'success',

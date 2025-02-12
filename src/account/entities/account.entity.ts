@@ -6,7 +6,8 @@ import {
   Index,
   ManyToOne,
   OneToMany,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
+  VersionColumn
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { AccountStatus, AccountType } from '../enum/account.enum';
@@ -58,6 +59,9 @@ export class Account extends AbstractEntity {
 
   @OneToMany(() => Beneficiary, (beneficiary) => beneficiary.account)
   beneficiaries: Beneficiary[];
+
+  @VersionColumn()
+  version: number;
 
   @BeforeInsert()
   async hashpassword() {

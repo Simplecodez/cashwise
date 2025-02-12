@@ -1,15 +1,12 @@
 import { Job } from 'bullmq';
 import { singleton } from 'tsyringe';
 import { AccountJobType } from '../enum/account.enum';
-import { AccountService } from '../services/account.service';
+import { AccountService } from '../services/account/account.service';
 import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class AccountProcessor {
-  constructor(
-    private readonly accountService: AccountService,
-    private readonly logger: Logger
-  ) {}
+  constructor(private readonly accountService: AccountService, private readonly logger: Logger) {}
 
   async process(job: Job): Promise<void> {
     try {

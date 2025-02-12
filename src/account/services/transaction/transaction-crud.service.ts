@@ -3,6 +3,7 @@ import { DataSource, FindOneOptions, Repository } from 'typeorm';
 import { Transaction } from '../../entities/transaction.entity';
 import {
   TransactionGateway,
+  transactionLimit,
   TransactionOrigin,
   TransactionStatus,
   TransactionType
@@ -16,9 +17,13 @@ import { FilterQueryBuilder } from '../../../common/pagination/lib/query-builder
 import { paginate } from '../../../common/pagination/pagination/paginate';
 import { Role } from '../../../user/enum/user.enum';
 import { formatDbQueryFilter, maskTransactions } from '../../../utils/db.utils';
+import { AppError } from '../../../utils/app-error.utils';
+import { HttpStatus } from '../../../common/http-codes/codes';
+import { AccountStatus } from '../../enum/account.enum';
 
 @singleton()
 export class TransactionCrudService {
+  private readonly accountCreditLimitFactor = 3;
   constructor(
     @inject('TransactionRepository')
     private readonly transactionRepository: Repository<Transaction>,
@@ -32,68 +37,6 @@ export class TransactionCrudService {
 
   async findOne(options: FindOneOptions<Transaction>) {
     return this.transactionRepository.findOne(options);
-  }
-
-  async findOneTransaction(accountId: string, reference: string) {
-    return this.transactionRepository
-      .createQueryBuilder('transaction')
-      .leftJoinAndSelect('transaction.senderAccount', 'senderAccount')
-      .leftJoinAndSelect('transaction.receiverAccount', 'receiverAccount')
-      .select([
-        'transaction',
-        'senderAccount.name',
-        'senderAccount.username',
-        'senderAccount.accountNumber',
-        'receiverAccount.name',
-        'receiverAccount.username',
-        'receiverAccount.accountNumber'
-      ])
-      .where(
-        '(transaction.receiverAccountId = :accountId AND transaction.reference = :reference) ' +
-          'OR (transaction.senderAccountId = :accountId AND transaction.reference = :reference)',
-        { reference, accountId }
-      )
-      .getOne();
-  }
-
-  async getOneAccountTransactions(accountId: string, paginationParams: PaginationParams) {
-    const filter: FiltersExpression = {
-      filters: [
-        {
-          field: 'senderAccountId',
-          operator: ComparisonOperatorEnum.EQUAL,
-          value: accountId
-        },
-        {
-          field: 'receiverAccountId',
-          operator: ComparisonOperatorEnum.EQUAL,
-          value: accountId
-        },
-        {
-          field: 'Sender.id',
-          relationField: 'Transaction.senderAccount',
-          selectFields: [
-            'Transaction',
-            'Sender.name',
-            'Sender.accountNumber',
-            'Sender.username'
-          ]
-        },
-        {
-          field: 'Receiver.id',
-          relationField: 'Transaction.receiverAccount',
-          selectFields: ['Receiver.name', 'Receiver.accountNumber', 'Receiver.username']
-        }
-      ],
-      operator: LogicalOperatorEnum.OR
-    };
-    const query = new FilterQueryBuilder<Transaction>(
-      this.transactionRepository,
-      'Transaction',
-      filter
-    );
-    const result = await paginate(query.build(), paginationParams, 'createdAt');
-    return result;
   }
 
   async calculateDailyTotalSuccessTransfer(senderAccountId: string) {
@@ -126,12 +69,7 @@ export class TransactionCrudService {
   ) {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       if (transactionStatus !== TransactionStatus.SUCCESS) {
-        await transactionalEntityManager.increment(
-          Account,
-          { id: senderAccountId },
-          'balance',
-          amount
-        );
+        await transactionalEntityManager.increment(Account, { id: senderAccountId }, 'balance', amount);
       }
 
       await transactionalEntityManager.update(
@@ -142,30 +80,6 @@ export class TransactionCrudService {
     });
   }
 
-  async handleDeposit(
-    reference: string,
-    accountId: string,
-    amount: number,
-    status: TransactionStatus,
-    failureReason?: string
-  ) {
-    return this.dataSource.transaction(async (transactionalEntityManager) => {
-      await transactionalEntityManager.update(
-        Transaction,
-        { reference, status: TransactionStatus.PENDING },
-        { status, failureReason }
-      );
-
-      if (status === TransactionStatus.SUCCESS)
-        await transactionalEntityManager.increment(
-          Account,
-          { id: accountId },
-          'balance',
-          amount
-        );
-    });
-  }
-
   async handleInternalTransfer(transferData: {
     senderAccountId: string;
     amount: number;
@@ -173,100 +87,73 @@ export class TransactionCrudService {
     reference: string;
     remark?: string;
   }) {
-    const { senderAccountId, amount, receiverAccountId, reference, remark } =
-      transferData;
+    const { senderAccountId, amount, receiverAccountId, reference, remark } = transferData;
+
     return this.dataSource.transaction(async (transactionalEntityManager) => {
-      await transactionalEntityManager.decrement(
-        Account,
-        { id: senderAccountId },
-        'balance',
-        amount
-      );
+      let isGreaterThanOrEqualTo3xAccountLimit = false;
 
-      await transactionalEntityManager.increment(
-        Account,
-        { id: receiverAccountId },
-        'balance',
-        amount
-      );
+      const receiverAccount = await transactionalEntityManager.findOne(Account, {
+        where: { id: receiverAccountId },
+        select: {
+          balance: true,
+          user: {
+            approvedKycLevel: true
+          }
+        }
+      });
 
-      const newTransactionRecord = transactionalEntityManager.create(
-        Transaction,
-        this.generationRecord(
-          senderAccountId,
-          receiverAccountId,
-          reference,
-          amount,
-          remark
-        )
-      );
+      if (!receiverAccount) throw new AppError('Receiver not found', HttpStatus.NOT_FOUND);
 
-      await transactionalEntityManager.insert(Transaction, newTransactionRecord);
-    });
-  }
+      const newReceiverBalance = Number(receiverAccount.balance) + amount;
+      const accountLimitOnCredit =
+        transactionLimit[receiverAccount.user.approvedKycLevel] * this.accountCreditLimitFactor;
 
-  async handleExternalTransferDebit(
-    senderAccountId: string,
-    amount: number,
-    transactionRecord: Partial<Transaction>
-  ) {
-    return this.dataSource.transaction(async (transactionalEntityManager) => {
-      await transactionalEntityManager.decrement(
-        Account,
-        { id: senderAccountId },
-        'balance',
-        amount
-      );
+      const shouldSuspendAccount = newReceiverBalance >= accountLimitOnCredit;
 
-      const newTransactionRecord = transactionalEntityManager.create(
-        Transaction,
-        transactionRecord
-      );
+      // await transactionalEntityManager.update(
+      //   Account,
+      //   { id: senderAccountId },
+      //   { balance: senderAccount.balance - amount }
+      // );
+      // await transactionalEntityManager.update(
+      //   Account,
+      //   { id: receiverAccountId },
+      //   { balance: newBalance }
+      // );
 
-      await transactionalEntityManager.insert(Transaction, newTransactionRecord);
-    });
-  }
-
-  async getTransactions(
-    userRole: Role,
-    paginationParams: PaginationParams,
-    parsedFilter?: Record<string, string>
-  ) {
-    const columns: string[] = ['status', 'type', 'reference'];
-
-    const filtersExpression = formatDbQueryFilter(columns, parsedFilter) || {
-      filters: []
-    };
-
-    filtersExpression.filters?.push(
-      {
-        field: 'Sender.id',
-        relationField: 'Transaction.senderAccount',
-        selectFields: [
-          'Transaction',
-          'Sender.name',
-          'Sender.accountNumber',
-          'Sender.username'
-        ]
-      },
-      {
-        field: 'Receiver.id',
-        relationField: 'Transaction.receiverAccount',
-        selectFields: ['Receiver.name', 'Receiver.accountNumber', 'Receiver.username']
+      // Suspend account if necessary
+      if (shouldSuspendAccount) {
+        await transactionalEntityManager.update(
+          Account,
+          { id: receiverAccountId },
+          { status: AccountStatus.SUSPENDED }
+        );
       }
-    );
 
-    const query = new FilterQueryBuilder(
-      this.transactionRepository,
-      'Transaction',
-      filtersExpression
-    );
+      if (
+        receiverAccount.balance + amount >=
+        this.accountCreditLimitFactor * transactionLimit[receiverAccount.user.approvedKycLevel]
+      )
+        isGreaterThanOrEqualTo3xAccountLimit = true;
 
-    const result = await paginate(query.build(), paginationParams, 'createdAt');
+      await transactionalEntityManager.decrement(Account, { id: senderAccountId }, 'balance', amount);
 
-    if (userRole !== Role.SUPER_ADMIN) maskTransactions(result.data);
+      await transactionalEntityManager.increment(Account, { id: receiverAccountId }, 'balance', amount);
 
-    return result;
+      // if (isGreaterThanOrEqualTo3xAccountLimit)
+      //   await transactionalEntityManager.update(
+      //     Account,
+      //     { id: receiverAccountId },
+      //     { status: AccountStatus.SUSPENDED }
+      //   );
+
+      const newTransactionRecord = transactionalEntityManager.create(
+        Transaction,
+        this.generationRecord(senderAccountId, receiverAccountId, reference, amount, remark)
+      );
+
+      await transactionalEntityManager.insert(Transaction, newTransactionRecord);
+    });
   }
 
   generationRecord(

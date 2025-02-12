@@ -5,7 +5,7 @@ const uuidIdSchema = Joi.string()
   .uuid({ version: ['uuidv4'] })
   .required();
 const accountNumberSchema = Joi.string().length(10).required();
-const stringSchema = Joi.string().length(120).optional();
+const stringSchema = Joi.string().min(25).max(60).optional();
 
 const passcodeSchema = Joi.string()
   .pattern(/^\d{4}$/)
@@ -18,7 +18,11 @@ export const completeTransferValidator = Joi.object({
   id: Joi.string().length(36).required(),
   passcode: passcodeSchema,
   passphrase: stringSchema
-}).xor('passcode', 'passphrase');
+})
+  .xor('passcode', 'passphrase')
+  .messages({
+    'object.xor': 'Either passcode or passphrase must be provided, not both'
+  });
 
 export const getAccountTransactionsValidator = Joi.object({
   id: uuidIdSchema

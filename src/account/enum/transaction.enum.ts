@@ -46,19 +46,21 @@ export const transactionLimit: { [key in KycLevel]: number } = {
   level_3: 100_000_000
 };
 
+export type ReceiverData = {
+  receiverName: string;
+  accountNumber: string;
+  accountId?: string;
+  bankCode?: string;
+};
+
 export type TransferData = {
   senderId: string;
   senderAccountId: string;
-  receiverDetails: {
-    receiverName: string;
-    accountNumber: string;
-    accountId?: string;
-    bankCode?: string;
-  };
+  receiverDetails: ReceiverData;
   amountInLowerUnit: number;
   transactionJobType: TransactionJobType;
   transactionFlag: TransactionFlag;
-  transactionStatus: TransactionStatus
+  transactionStatus: TransactionStatus;
   remark: string;
 };
 

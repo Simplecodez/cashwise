@@ -2,17 +2,17 @@ import { singleton } from 'tsyringe';
 import { Job } from 'bullmq';
 import { TransactionJobType } from '../enum/transaction.enum';
 import { PaymentService } from '../../integrations/payments/services/payment.service';
-import { InternalTransactionService } from '../services/transaction/internal-transaction.service';
+import { InternalTransactionProcessorService } from './internal-transaction-processor';
 import { AppError } from '../../utils/app-error.utils';
-import { ExternalTransactionService } from '../services/transaction/external-transaction.service';
+import { ExternalTransactionProcessorService } from './external-transaction-processor';
 import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class TransactionProcessor {
   constructor(
     private readonly paymentService: PaymentService,
-    private readonly internalTransactionService: InternalTransactionService,
-    private readonly externalTransactionService: ExternalTransactionService,
+    private readonly internalTransactionProcessorService: InternalTransactionProcessorService,
+    private readonly externalTransactionProcessorService: ExternalTransactionProcessorService,
     private readonly logger: Logger
   ) {}
 
@@ -20,7 +20,7 @@ export class TransactionProcessor {
     switch (job.name) {
       case TransactionJobType.DEPOSIT_PAYSTACK: {
         try {
-          await this.paymentService.handleDeposit(job.data);
+          await this.externalTransactionProcessorService.processDeposit(job.data);
         } catch (error: any) {
           this.logger.appLogger.error(error.message, error.stack);
           throw error;
@@ -31,7 +31,7 @@ export class TransactionProcessor {
 
       case TransactionJobType.INTERNAL_TRANSFER: {
         try {
-          await this.internalTransactionService.processInternalTransfer(job.data);
+          await this.internalTransactionProcessorService.processInternalTransfer(job.data);
           //notify after successful transfer
         } catch (error: AppError | any) {
           this.logger.appLogger.error(error.message, error.stack);
@@ -50,7 +50,7 @@ export class TransactionProcessor {
 
       case TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK: {
         try {
-          await this.externalTransactionService.processExternalTransfer(job.data);
+          await this.externalTransactionProcessorService.processExternalTransfer(job.data);
         } catch (error: any) {
           this.logger.appLogger.error(error.message, error.stack);
         }
