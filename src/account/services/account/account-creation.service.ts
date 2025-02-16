@@ -7,15 +7,20 @@ import { createHash, randomBytes } from 'crypto';
 @singleton()
 export class AccountCreationService {
   constructor(
-    @inject('AccountRepository') private readonly accountRepository: Repository<Account>,
+    @inject('AccountRepository')
+    private readonly accountRepository: Repository<Account>,
     @inject('ExternalRecipient')
     private readonly externalAccountRecipientRepository: Repository<ExternalRecipient>
   ) {}
 
   async createAccount(data: Partial<Account>) {
     const accountNumber = await this.generateAccountNumber();
-    const newAccount = this.accountRepository.create({ ...data, accountNumber });
-    return this.accountRepository.insert(newAccount);
+    const newAccount = this.accountRepository.create({
+      ...data,
+      accountNumber
+    });
+    await this.accountRepository.insert(newAccount);
+    return accountNumber;
   }
 
   async createExternalRecipient(data: Partial<ExternalRecipient>) {

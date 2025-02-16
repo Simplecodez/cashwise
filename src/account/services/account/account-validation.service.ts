@@ -11,7 +11,8 @@ export class AccountValidationService {
   private readonly MINIMUM_ACCOUNT_BALANCE = 10000;
 
   constructor(
-    @inject('AccountRepository') private readonly accountRepository: Repository<Account>,
+    @inject('AccountRepository')
+    private readonly accountRepository: Repository<Account>,
     private readonly logger: Logger
   ) {}
 
@@ -47,8 +48,6 @@ export class AccountValidationService {
     const senderAccount = await this.accountRepository.findOne(findSenderAccountOptions);
 
     this.guardAgainstInvalidAccountState(senderAccount, userId, requiredAvailableFunds);
-
-    return amountInLowerUnit;
   }
 
   private guardAgainstInvalidAccountState(
@@ -85,7 +84,7 @@ export class AccountValidationService {
 
   private logAccountWarning(userId: string, reason: string) {
     this.logger.appLogger.warn(
-      `Account validation failed: User ID ${userId}. Reason: ${reason}. Timestamp: ${new Date().toISOString()}`
+      `Transfer failed, account validation failed: User ID ${userId}. Reason: ${reason}. Timestamp: ${new Date().toISOString()}`
     );
   }
 }

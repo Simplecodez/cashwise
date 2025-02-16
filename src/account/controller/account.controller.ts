@@ -18,9 +18,9 @@ import { AccountService } from '../services/account/account.service';
 import { FindOneOptions } from 'typeorm';
 import { AppError } from '../../utils/app-error.utils';
 import { HttpStatus } from '../../common/http-codes/codes';
-import { BeneficiaryService } from '../services/beneficiary.service';
 import { validatePaginationParams } from '../../common/pagination/pagination/validator';
 import { AccountQueue } from '../job-processor/account.queue';
+import { BeneficiaryService } from '../services/account/beneficiary.service';
 
 @singleton()
 export class AccountController {
@@ -127,7 +127,11 @@ export class AccountController {
       const userRole = (req as IRequest).user.role;
       if (parsedFilter?.userId) await uuidIdSchema.validateAsync(parsedFilter.userId);
 
-      const accounts = await this.accountService.findAllAccounts(userRole, paginationParams, parsedFilter);
+      const accounts = await this.accountService.findAllAccounts(
+        userRole,
+        paginationParams,
+        parsedFilter
+      );
 
       res.json({
         status: 'success',
