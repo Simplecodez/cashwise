@@ -8,12 +8,7 @@ import bcrypt from 'bcrypt';
 import { createHmac, timingSafeEqual } from 'crypto';
 
 export class CommonUtils {
-  static generateOtp(options: {
-    size: number;
-    digit: boolean;
-    upper: boolean;
-    lower: boolean;
-  }): string {
+  static generateOtp(options: { size: number; digit: boolean; upper: boolean; lower: boolean }): string {
     const otp = otpGenerator.generate(options.size, {
       digits: options.digit,
       upperCaseAlphabets: options.upper,
@@ -28,25 +23,14 @@ export class CommonUtils {
     try {
       const parsedPhoneNumber = parsePhoneNumber(phoneNumber, countryCode as CountryCode);
 
-      if (
-        !(
-          parsedPhoneNumber.isValid() &&
-          parsedPhoneNumber.country === countryCode.toUpperCase()
-        )
-      ) {
-        throw new AppError(
-          'Invalid phone number or country code.',
-          HttpStatus.BAD_REQUEST
-        );
+      if (!(parsedPhoneNumber.isValid() && parsedPhoneNumber.country === countryCode.toUpperCase())) {
+        throw new AppError('Invalid phone number or country code.', HttpStatus.BAD_REQUEST);
       }
 
       return this.formatPhoneNumber(parsedPhoneNumber.number);
     } catch (error: any) {
       if (error?.message === 'INVALID_COUNTRY') {
-        throw new AppError(
-          'Invalid phone number or country code.',
-          HttpStatus.BAD_REQUEST
-        );
+        throw new AppError('Invalid phone number or country code.', HttpStatus.BAD_REQUEST);
       }
     }
   }
@@ -77,10 +61,7 @@ export class CommonUtils {
     });
   }
 
-  static async verifyPassword(
-    candidatePassword: string,
-    userPassword: string
-  ): Promise<boolean> {
+  static async verifyPassword(candidatePassword: string, userPassword: string): Promise<boolean> {
     return await bcrypt.compare(candidatePassword, userPassword);
   }
 
@@ -104,5 +85,13 @@ export class CommonUtils {
       !!signature &&
       timingSafeEqual(Buffer.from(computedSignature), Buffer.from(signature))
     );
+  }
+
+  static formatCurrency(amount: number) {
+    const amountInHigherUnit = amount / 100;
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN'
+    }).format(amountInHigherUnit);
   }
 }

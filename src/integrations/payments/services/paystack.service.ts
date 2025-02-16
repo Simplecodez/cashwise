@@ -15,11 +15,7 @@ export class Paystack implements IPaystackPaymentProvider {
     });
   }
 
-  async initializeTransaction(
-    email: string,
-    amountInLowerunit: number,
-    reference: string
-  ) {
+  async initializeTransaction(email: string, amountInLowerunit: number, reference: string) {
     return this.axiosInstance.post('/transaction/initialize', {
       email,
       amount: amountInLowerunit,
@@ -27,20 +23,11 @@ export class Paystack implements IPaystackPaymentProvider {
     });
   }
 
-  async verifyAccountDetailBeforeExternalTransfer(
-    accountNumber: string,
-    bankCode: string
-  ) {
-    return this.axiosInstance.get(
-      `/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`
-    );
+  async verifyAccountNumber(accountNumber: string, bankCode: string) {
+    return this.axiosInstance.get(`/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`);
   }
 
-  async createExternalTransferRecipient(
-    name: string,
-    accountNumber: string,
-    bankCode: string
-  ) {
+  async createExternalTransferRecipient(name: string, accountNumber: string, bankCode: string) {
     const data = {
       type: 'nuban',
       name,
@@ -51,12 +38,7 @@ export class Paystack implements IPaystackPaymentProvider {
     return this.axiosInstance.post('/transferrecipient', data);
   }
 
-  async initiateExternalTransfer(
-    amount: number,
-    recipient: string,
-    reference: string,
-    reason?: string
-  ) {
+  async initiateExternalTransfer(amount: number, recipient: string, reference: string, reason?: string) {
     const data = { source: 'balance', amount, recipient, reason, reference };
     return this.axiosInstance.post('/transfer', data);
   }

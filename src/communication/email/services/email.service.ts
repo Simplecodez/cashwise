@@ -13,10 +13,7 @@ export class EmailService {
   private readonly transporter: nodemailer.Transporter;
 
   constructor() {
-    this.signUpTemplate = pug.compileFile(
-      path.join(__dirname, `../email-templates/signup.pug`)
-    );
-
+    this.signUpTemplate = pug.compileFile(path.join(__dirname, `../email-templates/signup.pug`));
     this.resetPasswordTemplate = pug.compileFile(
       path.join(__dirname, `../email-templates/reset-password.pug`)
     );
@@ -63,20 +60,12 @@ export class EmailService {
     }
   }
 
-  private async sendResetPasswordOTP(data: {
-    otp: string;
-    email: string;
-    emailType: EmailType;
-  }) {
+  private async sendResetPasswordOTP(data: { otp: string; email: string; emailType: EmailType }) {
     const html = this.resetPasswordTemplate(data);
     return this.initialEmailSending(data, 'Reset password OTP', html);
   }
 
-  private async sendSignupOTP(data: {
-    otp: string;
-    email: string;
-    emailType: EmailType;
-  }) {
+  private async sendSignupOTP(data: { otp: string; email: string; emailType: EmailType }) {
     const html = this.signUpTemplate(data);
     return this.initialEmailSending(data, 'Sign up OTP', html);
   }

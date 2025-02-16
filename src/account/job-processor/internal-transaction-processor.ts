@@ -1,32 +1,17 @@
 import { singleton } from 'tsyringe';
-import { FindOneOptions } from 'typeorm';
-import { HttpStatus } from '../../../common/http-codes/codes';
-import { AppError } from '../../../utils/app-error.utils';
-import { TransactionCrudService } from './transaction-crud.service';
-import { Transaction } from '../../entities/transaction.entity';
-import { BeneficiaryQueue } from '../../job-processor/beneficiary.queue';
-import { BeneficiaryJob } from '../../enum/beneficiary.enum';
-import { Beneficiary } from '../../entities/beneficiary.entity';
-import { BeneficiaryService } from '../beneficiary.service';
+import { BeneficiaryQueue } from './beneficiary.queue';
+import { BeneficiaryJob } from '../enum/beneficiary.enum';
+import { Beneficiary } from '../entities/beneficiary.entity';
+import { TransactionInternalFundTransferService } from '../services/transaction/transaction-internal-fund-transfer.service';
+import { BeneficiaryService } from '../services/account/beneficiary.service';
 
 @singleton()
-export class InternalTransactionService {
+export class InternalTransactionProcessorService {
   constructor(
-    private readonly transactionCrudService: TransactionCrudService,
+    private readonly transactionInternalFundTransferService: TransactionInternalFundTransferService,
     private readonly beneficiaryQueue: BeneficiaryQueue,
     private readonly beneficiaryService: BeneficiaryService
   ) {}
-
-  async initializeInternalTransfer(reference: string) {
-    const findTransactionOptions: FindOneOptions<Transaction> = {
-      where: { reference }
-    };
-    const transactionRecord = await this.transactionCrudService.findOne(
-      findTransactionOptions
-    );
-    if (transactionRecord)
-      throw new AppError('Duplicate transaction', HttpStatus.BAD_REQUEST);
-  }
 
   async processInternalTransfer(transferData: {
     userId: string;
@@ -49,9 +34,7 @@ export class InternalTransactionService {
       userId
     } = transferData;
 
-    await this.initializeInternalTransfer(reference);
-
-    await this.transactionCrudService.handleInternalTransfer({
+    const transferResult = await this.transactionInternalFundTransferService.transferFunds({
       senderAccountId,
       amount,
       receiverAccountId,
@@ -73,6 +56,6 @@ export class InternalTransactionService {
       this.beneficiaryQueue.addJob(BeneficiaryJob.CREATION, beneficiary);
     }
 
-    return 'Transfer successful';
+    return transferResult;
   }
 }

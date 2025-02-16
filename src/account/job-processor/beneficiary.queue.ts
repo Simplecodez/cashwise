@@ -5,12 +5,14 @@ import { Job, Worker } from 'bullmq';
 import { BeneficiaryJob } from '../enum/beneficiary.enum';
 import { Beneficiary } from '../entities/beneficiary.entity';
 import { BeneficiaryProcessor } from './beneficiary.processor';
+import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class BeneficiaryQueue extends BaseQueue {
   protected worker: Worker;
 
   constructor(
+    private readonly logger: Logger,
     private readonly cacheService: RedisCache,
     private readonly beneficiaryProcessor: BeneficiaryProcessor
   ) {
@@ -30,7 +32,16 @@ export class BeneficiaryQueue extends BaseQueue {
   }
 
   async addJob(name: BeneficiaryJob, data: Partial<Beneficiary>): Promise<void> {
-    await this.queue.add(name, data);
+    try {
+      await this.queue.add(name, data);
+      this.logger.appLogger.info(
+        `Beneficiary job added [${name}]: Timestamp: ${new Date().toISOString()}`
+      );
+    } catch (error) {
+      this.logger.appLogger.info(
+        `Failed adding Beneficiary job [${name}]: Timestamp: ${new Date().toISOString()}`
+      );
+    }
   }
 
   getQueue() {

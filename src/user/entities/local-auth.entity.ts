@@ -25,7 +25,6 @@ export class LocalAuth extends AbstractEntity {
   passwordHash: string;
 
   @BeforeInsert()
-  @BeforeUpdate()
   async hashpassword() {
     this.passwordHash = await bcrypt.hash(this.passwordHash, 10);
   }

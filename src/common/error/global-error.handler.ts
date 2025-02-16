@@ -14,7 +14,7 @@ export class GlobalErrorHandler {
   }
 
   static handleDuplicateDB(err: any): AppError {
-    let message: string = 'Email or phone number already exist';
+    let message: string = 'Email or username already exist';
     return new AppError(message, 400);
   }
 
@@ -30,19 +30,17 @@ export class GlobalErrorHandler {
   }
 
   static handleJWTExpiredError() {
-    return new AppError(
-      'Your token has expired! Please log in again.',
-      HttpStatus.UNAUTHORIZED
-    );
+    return new AppError('Your token has expired! Please log in again.', HttpStatus.UNAUTHORIZED);
   }
 
-  static handleAxiosError(error: AxiosError) {
+  static handleAxiosError(error: AxiosError<any>) {
     if (error.response?.status === 404) {
       return new AppError('Invalid or expired token', HttpStatus.UNAUTHORIZED);
     }
 
-    if (error.response?.status === 400)
-      return new AppError('Bad request', HttpStatus.BAD_REQUEST);
+    if (error.response?.status === 400) return new AppError('Bad request', HttpStatus.BAD_REQUEST);
+    if (error.response?.status === 422 && error.response?.data.code === 'invalid_bank_code')
+      return new AppError('Invalid bank code', HttpStatus.BAD_REQUEST);
 
     return error;
   }
@@ -71,8 +69,7 @@ export class GlobalErrorHandler {
       if (error.name === 'JsonWebTokenError') error = this.handleJWTError();
       if (error.name === 'TokenExpiredError') error = this.handleJWTExpiredError();
       if (error.isAxiosError) error = this.handleAxiosError(error);
-      if (error instanceof SyntaxError && 'body' in error)
-        error = this.handleBadJsonFormatError();
+      if (error instanceof SyntaxError && 'body' in error) error = this.handleBadJsonFormatError();
 
       this.sendError(error, res);
     };

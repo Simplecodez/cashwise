@@ -1,4 +1,6 @@
+import * as bcrypt from 'bcrypt';
 import {
+  BeforeInsert,
   Column,
   Entity,
   Index,
@@ -45,9 +47,25 @@ export class Account extends AbstractEntity {
   @OneToMany(() => Transaction, (tx) => tx.senderAccount)
   sentTransactions: Transaction[];
 
+  @Column({ type: 'varchar', select: false })
+  passcode: string;
+
+  @Column({ type: 'varchar', select: false })
+  passPhrase: string;
+
   @OneToMany(() => Transaction, (tx) => tx.receiverAccount)
   receivedTransactions: Transaction[];
 
   @OneToMany(() => Beneficiary, (beneficiary) => beneficiary.account)
   beneficiaries: Beneficiary[];
+
+  @BeforeInsert()
+  async hashpassword() {
+    const [hashedPasscode, hashedPassPhrase] = await Promise.all([
+      bcrypt.hash(this.passcode, 10),
+      bcrypt.hash(this.passPhrase, 10)
+    ]);
+    this.passcode = hashedPasscode;
+    this.passPhrase = hashedPassPhrase;
+  }
 }

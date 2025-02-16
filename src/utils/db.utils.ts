@@ -35,10 +35,7 @@ export function formatDbField(value: any): any {
   return value;
 }
 
-export function formatDbQueryFilter(
-  columns: string[],
-  filterObject?: Record<string, string>
-) {
+export function formatDbQueryFilter(columns: string[], filterObject?: Record<string, string>) {
   if (!filterObject) return;
 
   if (Object.keys(filterObject).length > 2)
@@ -101,6 +98,6 @@ export function maskTransaction(transaction: Transaction) {
     );
 }
 
-function maskNumberString(data: string) {
+export function maskNumberString(data: string) {
   return data.replace(/\d(?=\d{4})/g, '*');
 }

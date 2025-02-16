@@ -13,7 +13,7 @@ export interface IPaystackPaymentProvider {
     }>
   >;
 
-  verifyAccountDetailBeforeExternalTransfer(
+  verifyAccountNumber(
     accountNumber: string,
     bankCode: string
   ): Promise<

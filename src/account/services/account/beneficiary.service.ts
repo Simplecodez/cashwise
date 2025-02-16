@@ -1,17 +1,17 @@
-import { inject, singleton } from 'tsyringe';
-import { Repository } from 'typeorm';
-import { Beneficiary } from '../entities/beneficiary.entity';
-import { FiltersExpression } from '../../common/pagination/lib/interface/filters-expression.input';
-import { ComparisonOperatorEnum } from '../../common/pagination/lib/enum/comparison-operator.enum';
-import { LogicalOperatorEnum } from '../../common/pagination/lib/enum/logical-operator.enum';
-import { FilterQueryBuilder } from '../../common/pagination/lib/query-builder/filter-query-builder';
-import { paginate } from '../../common/pagination/pagination/paginate';
-import { PaginationParams } from '../../common/pagination/pagination/pagination.args';
+import { inject, singleton } from "tsyringe";
+import { Repository } from "typeorm";
+import { Beneficiary } from "../../entities/beneficiary.entity";
+import { PaginationParams } from "../../../common/pagination/pagination/pagination.args";
+import { FiltersExpression } from "../../../common/pagination/lib/interface/filters-expression.input";
+import { ComparisonOperatorEnum } from "../../../common/pagination/lib/enum/comparison-operator.enum";
+import { LogicalOperatorEnum } from "../../../common/pagination/lib/enum/logical-operator.enum";
+import { FilterQueryBuilder } from "../../../common/pagination/lib/query-builder/filter-query-builder";
+import { paginate } from "../../../common/pagination/pagination/paginate";
 
 @singleton()
 export class BeneficiaryService {
   constructor(
-    @inject('BeneficiaryRepository')
+    @inject("BeneficiaryRepository")
     private readonly beneficiaryRepository: Repository<Beneficiary>
   ) {}
 
@@ -28,8 +28,8 @@ export class BeneficiaryService {
     return this.beneficiaryRepository.findOne({
       where: {
         accountId,
-        beneficiaryAccountNumber
-      }
+        beneficiaryAccountNumber,
+      },
     });
   }
 
@@ -41,26 +41,26 @@ export class BeneficiaryService {
     const filter: FiltersExpression = {
       filters: [
         {
-          field: 'accountId',
+          field: "accountId",
           operator: ComparisonOperatorEnum.EQUAL,
-          value: accountId
+          value: accountId,
         },
         {
-          field: 'userId',
+          field: "userId",
           operator: ComparisonOperatorEnum.EQUAL,
-          value: userId
-        }
+          value: userId,
+        },
       ],
-      operator: LogicalOperatorEnum.AND
+      operator: LogicalOperatorEnum.AND,
     };
 
     const query = new FilterQueryBuilder<Beneficiary>(
       this.beneficiaryRepository,
-      'Transaction',
+      "Transaction",
       filter
     );
 
-    const result = await paginate(query.build(), paginationParams, 'createdAt');
+    const result = await paginate(query.build(), paginationParams, "createdAt");
     return result;
   }
 }

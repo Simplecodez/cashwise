@@ -6,6 +6,7 @@ import { AccountProcessor } from './account.processor';
 import { AccountJobType } from '../enum/account.enum';
 import { Account } from '../entities/account.entity';
 import { ExternalRecipient } from '../entities/external-account.entity';
+import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class AccountQueue extends BaseQueue {
@@ -13,7 +14,8 @@ export class AccountQueue extends BaseQueue {
 
   constructor(
     private readonly cacheService: RedisCache,
-    private readonly accountProcessor: AccountProcessor
+    private readonly accountProcessor: AccountProcessor,
+    private readonly logger: Logger
   ) {
     super('Account', cacheService);
 
@@ -32,9 +34,22 @@ export class AccountQueue extends BaseQueue {
 
   async addJob(
     name: AccountJobType,
-    data: Partial<Account> | Partial<ExternalRecipient>
+    jobData: Partial<Account> | Partial<ExternalRecipient>
   ): Promise<void> {
-    await this.queue.add(name, data);
+    try {
+      await this.queue.add(name, jobData, {
+        removeOnComplete: true
+      });
+
+      this.logger.appLogger.info(
+        `Account creation job added [${name}]: Timestamp: ${new Date().toISOString()}`
+      );
+    } catch (error: any) {
+      this.logger.appLogger.error(
+        `Failed to add account job [${name}]: ${error.message}`,
+        error.stack
+      );
+    }
   }
 
   getQueue() {

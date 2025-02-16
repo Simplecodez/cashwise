@@ -20,9 +20,21 @@ const accountNameSchema = Joi.string()
     'string.max': 'Account name must not exceed 30 characters.'
   });
 
+const commonPasscodes = ['1000', '1234', '1111', '2222', '0000', '9999'];
+
+const passcodeSchema = Joi.string()
+  .pattern(/^\d{4}$/)
+  .not(...commonPasscodes)
+  .required()
+  .messages({
+    'string.pattern.base': 'Passcode must be a 4-digit number',
+    'any.invalid': 'This passcode is too common, please choose a different one'
+  });
+
 const accountCreationValidator = Joi.object({
   accountType: accountTypeSchema,
-  accountName: accountNameSchema
+  accountName: accountNameSchema,
+  passcode: passcodeSchema
 });
 
 export const uuidIdSchema = Joi.string()
@@ -54,6 +66,7 @@ export async function accountCreateValidation(
   reqBody: {
     accountType: string;
     accountName: string;
+    passcode: string;
   },
   userKycLevel: KycLevel
 ) {
