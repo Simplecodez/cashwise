@@ -20,18 +20,26 @@ import { Logger } from '../../common/logger/logger';
 
 @singleton()
 export class TransactionController {
-  constructor(private readonly transactionService: TransactionService, private readonly logger: Logger) {}
+  constructor(
+    private readonly transactionService: TransactionService,
+    private readonly logger: Logger
+  ) {}
 
   completeTransfer() {
     return catchAsync(async (req: IRequest | Request, res) => {
       await completeTransferValidator.validateAsync({ ...req.body, ...req.params });
       const { id: transactionKey } = req.params;
       const { passcode, passphrase } = req.body as Record<string, string>;
+      const userId = (req as IRequest).user.id;
       let passcodeOrPassphrase = passcode;
 
       if (!passcodeOrPassphrase) passcodeOrPassphrase = passphrase;
 
-      const message = await this.transactionService.completeTransfer(transactionKey, passcodeOrPassphrase);
+      const message = await this.transactionService.completeTransfer(
+        userId,
+        transactionKey,
+        passcodeOrPassphrase
+      );
 
       res.json({
         status: 'success',
@@ -45,7 +53,8 @@ export class TransactionController {
       await internalTransferValidator.validateAsync(req.body, { convert: false });
       const { id: userId, approvedKycLevel } = (req as IRequest).user;
 
-      const { receiverAccountNumber, senderAccountId, amount, remark } = req.body as InternalTransferData;
+      const { receiverAccountNumber, senderAccountId, amount, remark } =
+        req.body as InternalTransferData;
 
       const validationResult = await this.transactionService.validateInternalTransferDetails(
         senderAccountId,
@@ -150,20 +159,27 @@ export class TransactionController {
               const { status, reference, amount, session } = data;
 
               if (status && reference && amount)
-                this.transactionService.addTransactionQueue(TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK, {
-                  status,
-                  reference,
-                  amount,
-                  session
-                });
+                this.transactionService.addTransactionQueue(
+                  TransactionJobType.EXTERNAL_TRANSFER_PAYSTACK,
+                  {
+                    status,
+                    reference,
+                    amount,
+                    session
+                  }
+                );
             }
 
             default:
-              this.logger.appLogger.info(`Unsupported webhook event, Timestamp: ${new Date().toISOString()}`);
+              this.logger.appLogger.info(
+                `Unsupported webhook event, Timestamp: ${new Date().toISOString()}`
+              );
               break;
           }
       } else {
-        this.logger.appLogger.info(`Invalid webhook signature, Timestamp: ${new Date().toISOString()}`);
+        this.logger.appLogger.info(
+          `Invalid webhook signature, Timestamp: ${new Date().toISOString()}`
+        );
       }
 
       res.json({
@@ -198,7 +214,11 @@ export class TransactionController {
       const { id: userId } = (req as IRequest).user;
       await getAccountTransactionValidator.validateAsync(req.params);
       const { id: accoundId, reference } = req.params;
-      const transaction = await this.transactionService.getAccountTransaction(userId, accoundId, reference);
+      const transaction = await this.transactionService.getAccountTransaction(
+        userId,
+        accoundId,
+        reference
+      );
       res.json({
         status: 'success',
         transaction

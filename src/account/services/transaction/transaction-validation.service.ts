@@ -36,7 +36,19 @@ export class TransactionValidationService {
     remark?: string
   ) {
     await this.accountService.validateSenderAccount(userId, senderAccountId, amount);
-    const receiverDetails = await this.accountService.validateReceiverAccount(receiverAccountNumber);
+    const receiverDetails = await this.accountService.validateReceiverAccount(
+      receiverAccountNumber
+    );
+
+    const dailyLimit = transactionLimit[approvedKycLevel];
+    const amountInLowerUnit = Number(amount) * 100;
+
+    await this.validateDailyTransactionLimit(
+      approvedKycLevel,
+      senderAccountId,
+      amountInLowerUnit,
+      dailyLimit
+    );
 
     return this.prepareTransactionForProcessing(
       userId,
@@ -58,13 +70,22 @@ export class TransactionValidationService {
     bankCode: string,
     remark?: string
   ) {
-    const amountInLowerUnit = await this.accountService.validateSenderAccount(
-      userId,
+    const dailyLimit = transactionLimit[approvedKycLevel];
+    const amountInLowerUnit = Number(amount) * 100;
+
+    await this.accountService.validateSenderAccount(userId, senderAccountId, amount);
+
+    await this.validateDailyTransactionLimit(
+      approvedKycLevel,
       senderAccountId,
-      amount
+      amountInLowerUnit,
+      dailyLimit
     );
 
-    const verificationResult = await this.paymentService.verifyAccountNumber(receiverAccountNumber, bankCode);
+    const verificationResult = await this.paymentService.verifyAccountNumber(
+      receiverAccountNumber,
+      bankCode
+    );
 
     const receiverDetails = {
       receiverName: verificationResult.data.data.account_name,
@@ -98,7 +119,7 @@ export class TransactionValidationService {
         senderAccountId
       );
 
-      if (dailyTotal + amountInLowerUnit >= dailyLimit) {
+      if (dailyTotal + amountInLowerUnit > dailyLimit) {
         throw new AppError(
           'Daily transaction limit reached. Upgrade your KYC level to increase your limit',
           HttpStatus.BAD_REQUEST
@@ -118,14 +139,6 @@ export class TransactionValidationService {
   ) {
     const dailyLimit = transactionLimit[approvedKycLevel];
     const amountInLowerUnit = Number(amount) * 100;
-
-    await this.validateDailyTransactionLimit(
-      approvedKycLevel,
-      senderAccountId,
-      amountInLowerUnit,
-      dailyLimit
-    );
-
     let cacheKey = `txn-${uuidv4().replace(/-/g, '')}`;
     let authMethod = 'PIN';
     let transactionFlag = TransactionFlag.NORMAL;

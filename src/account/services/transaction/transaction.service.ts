@@ -6,9 +6,10 @@ import { KycLevel } from '../../../user/enum/kyc.enum';
 import { PaginationParams } from '../../../common/pagination/pagination/pagination.args';
 import { Role } from '../../../user/enum/user.enum';
 import { TransactionValidationService } from './transaction-validation.service';
-import { TransactionInitService } from './transaction-init.service';
+import { TransactionInitService } from './transaction-init-deposit.service';
 import { TransactionRetrievalService } from './transaction-retrieval.service';
-import { CompleteTransactionService } from './complete-transaction.service';
+import { CompleteTransactionService } from './transaction-completion.service';
+import { TransactionExternalFundTransfer } from './transaction-external-fund-transfer.service';
 
 @singleton()
 export class TransactionService {
@@ -17,6 +18,7 @@ export class TransactionService {
     private readonly transactionInitService: TransactionInitService,
     private readonly transactionQueue: TransactionQueue,
     private readonly transactionRetrievalService: TransactionRetrievalService,
+    private readonly transactionExternalFundTransfer: TransactionExternalFundTransfer,
     private readonly completeTransactionService: CompleteTransactionService
   ) {}
 
@@ -60,8 +62,12 @@ export class TransactionService {
     );
   }
 
-  async completeTransfer(transactionKey: string, passcodeOrPassphrase: string) {
-    return this.completeTransactionService.completeTransfer(transactionKey, passcodeOrPassphrase);
+  async completeTransfer(userId: string, transactionKey: string, passcodeOrPassphrase: string) {
+    return this.completeTransactionService.completeTransfer(
+      userId,
+      transactionKey,
+      passcodeOrPassphrase
+    );
   }
 
   async verifyExternalAccount(accountNumber: string, bankCode: string) {
@@ -84,8 +90,16 @@ export class TransactionService {
     return this.transactionQueue.addJob(transactionJobType, data);
   }
 
-  async getAccountTransactions(userId: string, accountId: string, paginationParams: PaginationParams) {
-    return this.transactionRetrievalService.getAccountTransactions(userId, accountId, paginationParams);
+  async getAccountTransactions(
+    userId: string,
+    accountId: string,
+    paginationParams: PaginationParams
+  ) {
+    return this.transactionRetrievalService.getAccountTransactions(
+      userId,
+      accountId,
+      paginationParams
+    );
   }
 
   async getAccountTransaction(userId: string, accountId: string, reference: string) {
@@ -97,6 +111,10 @@ export class TransactionService {
     paginationParams: PaginationParams,
     parsedFilter?: Record<string, string>
   ) {
-    return this.transactionRetrievalService.getTransactions(userRole, paginationParams, parsedFilter);
+    return this.transactionRetrievalService.getTransactions(
+      userRole,
+      paginationParams,
+      parsedFilter
+    );
   }
 }

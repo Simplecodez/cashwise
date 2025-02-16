@@ -1,29 +1,17 @@
 import { singleton } from 'tsyringe';
-import { FindOneOptions } from 'typeorm';
-import { HttpStatus } from '../../common/http-codes/codes';
-import { AppError } from '../../utils/app-error.utils';
-import { TransactionCrudService } from '../services/transaction/transaction-crud.service';
-import { Transaction } from '../entities/transaction.entity';
 import { BeneficiaryQueue } from './beneficiary.queue';
 import { BeneficiaryJob } from '../enum/beneficiary.enum';
 import { Beneficiary } from '../entities/beneficiary.entity';
-import { BeneficiaryService } from '../services/beneficiary.service';
+import { TransactionInternalFundTransferService } from '../services/transaction/transaction-internal-fund-transfer.service';
+import { BeneficiaryService } from '../services/account/beneficiary.service';
 
 @singleton()
 export class InternalTransactionProcessorService {
   constructor(
-    private readonly transactionCrudService: TransactionCrudService,
+    private readonly transactionInternalFundTransferService: TransactionInternalFundTransferService,
     private readonly beneficiaryQueue: BeneficiaryQueue,
     private readonly beneficiaryService: BeneficiaryService
   ) {}
-
-  async validateTransaction(reference: string) {
-    const findTransactionOptions: FindOneOptions<Transaction> = {
-      where: { reference }
-    };
-    const transactionRecord = await this.transactionCrudService.findOne(findTransactionOptions);
-    if (transactionRecord) throw new AppError('Duplicate transaction', HttpStatus.BAD_REQUEST);
-  }
 
   async processInternalTransfer(transferData: {
     userId: string;
@@ -46,9 +34,7 @@ export class InternalTransactionProcessorService {
       userId
     } = transferData;
 
-    await this.validateTransaction(reference);
-
-    await this.transactionCrudService.handleInternalTransfer({
+    const transferResult = await this.transactionInternalFundTransferService.transferFunds({
       senderAccountId,
       amount,
       receiverAccountId,
@@ -56,7 +42,10 @@ export class InternalTransactionProcessorService {
       remark
     });
 
-    const existingBeneficiary = await this.beneficiaryService.findOne(senderAccountId, receiverAccountNumber);
+    const existingBeneficiary = await this.beneficiaryService.findOne(
+      senderAccountId,
+      receiverAccountNumber
+    );
     if (!existingBeneficiary) {
       const beneficiary: Partial<Beneficiary> = {
         userId,
@@ -67,6 +56,6 @@ export class InternalTransactionProcessorService {
       this.beneficiaryQueue.addJob(BeneficiaryJob.CREATION, beneficiary);
     }
 
-    return 'Transfer successful';
+    return transferResult;
   }
 }

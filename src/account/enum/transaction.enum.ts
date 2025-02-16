@@ -41,7 +41,7 @@ export enum TransactionJobType {
 
 export const transactionLimit: { [key in KycLevel]: number } = {
   level_0: 0,
-  level_1: 3_000_000,
+  level_1: 5_000_000,
   level_2: 15_000_000,
   level_3: 100_000_000
 };

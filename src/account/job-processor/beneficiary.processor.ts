@@ -1,8 +1,8 @@
 import { singleton } from 'tsyringe';
-import { BeneficiaryService } from '../services/beneficiary.service';
 import { Job } from 'bullmq';
 import { BeneficiaryJob } from '../enum/beneficiary.enum';
 import { Logger } from '../../common/logger/logger';
+import { BeneficiaryService } from '../services/account/beneficiary.service';
 
 @singleton()
 export class BeneficiaryProcessor {

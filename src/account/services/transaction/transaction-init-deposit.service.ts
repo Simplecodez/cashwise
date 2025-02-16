@@ -1,11 +1,9 @@
-import { inject, singleton } from 'tsyringe';
+import { singleton } from 'tsyringe';
 import { AccountService } from '../account/account.service';
 import { PaymentProvider } from '../../../integrations/payments/enum/payment.enum';
 import { HttpStatus } from '../../../common/http-codes/codes';
 import { AppError } from '../../../utils/app-error.utils';
 import { v4 as uuidv4 } from 'uuid';
-import { AccountQueue } from '../../job-processor/account.queue';
-import { DataSource, FindOneOptions } from 'typeorm';
 import { Transaction } from '../../entities/transaction.entity';
 import {
   TransactionGateway,
@@ -40,11 +38,10 @@ export class TransactionInitService {
     }
   ) {
     const { email, amount, userId, receiverAccountId } = transactionDetails;
-    const options: FindOneOptions = {
-      where: { id: receiverAccountId }
-    };
 
-    const account = await this.accountService.findOne(options);
+    const account = await this.accountService.findOne({
+      where: { id: receiverAccountId }
+    });
 
     if (!account || account.userId !== userId)
       throw new AppError('Invalid account id', HttpStatus.BAD_REQUEST);
